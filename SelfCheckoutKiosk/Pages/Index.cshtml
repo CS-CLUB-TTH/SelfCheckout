@@ -1,0 +1,28 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Farmers Market Self Checkout";
+    Layout = "_KioskLayout";
+}
+
+<div class="idle-screen">
+    <div class="idle-logo">
+        <div class="idle-logo-text">
+            Farmers<br/>Market
+        </div>
+    </div>
+    
+    <div class="video-container">
+        <div class="video-placeholder">
+            🌾 Promotional Video 🌾
+            <br/>
+            <small style="font-size: 16px; margin-top: 10px; display: block;">
+                (Video player will be displayed here)
+            </small>
+        </div>
+    </div>
+    
+    <a href="/Cart" class="start-button">
+        Press to Start
+    </a>
+</div>
