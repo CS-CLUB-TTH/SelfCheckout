@@ -1,0 +1,58 @@
+@page
+@model FeedbackModel
+@{
+    ViewData["Title"] = "Feedback";
+    Layout = "_KioskLayout";
+}
+
+<div class="feedback-screen">
+    <div class="feedback-header">
+        <h1>How was your experience?</h1>
+        <p class="feedback-subtitle">We value your feedback!</p>
+    </div>
+    
+    <div class="feedback-content">
+        <div class="rating-container">
+            <h2 class="rating-title">Rate Your Experience</h2>
+            <div class="rating-faces">
+                <div class="rating-face rating-face-1" data-rating="1" onclick="selectRating(1)">
+                    😞
+                    <div class="rating-label">Poor</div>
+                </div>
+                <div class="rating-face rating-face-2" data-rating="2" onclick="selectRating(2)">
+                    😕
+                    <div class="rating-label">Fair</div>
+                </div>
+                <div class="rating-face rating-face-3" data-rating="3" onclick="selectRating(3)">
+                    😐
+                    <div class="rating-label">Good</div>
+                </div>
+                <div class="rating-face rating-face-4" data-rating="4" onclick="selectRating(4)">
+                    😊
+                    <div class="rating-label">Very Good</div>
+                </div>
+                <div class="rating-face rating-face-5" data-rating="5" onclick="selectRating(5)">
+                    😄
+                    <div class="rating-label">Excellent</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="qr-section">
+            <h2 class="qr-title">Want to share more details?</h2>
+            <p class="qr-subtitle">Scan the QR code below for detailed feedback</p>
+            <div class="qr-code">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https://forms.office.com/Pages/ResponsePage.aspx?id=Spo5-Si9LkGUT4oU0hxe6dF-g3g83OdMl5d0zBMx-WVUNkZPUjZTWjFUSzBKNFoyWjBWS1RIQkQ3OS4u" 
+                     alt="Feedback QR Code" />
+            </div>
+        </div>
+    </div>
+    
+    <div class="feedback-footer">
+        <a href="/" class="return-button">Return to Start</a>
+    </div>
+    
+    <div class="timer-display">
+        Auto-return in: 60s
+    </div>
+</div>
