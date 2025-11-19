@@ -1,0 +1,16 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Organic circular pattern -->
+  <circle cx="100" cy="100" r="80" fill="#f4d84b" opacity="0.15"/>
+  <circle cx="100" cy="100" r="60" fill="#4b9762" opacity="0.1"/>
+  <circle cx="100" cy="100" r="40" fill="#163f36" opacity="0.08"/>
+  
+  <!-- Seed-like dots -->
+  <circle cx="100" cy="40" r="4" fill="#b77232" opacity="0.6"/>
+  <circle cx="140" cy="60" r="4" fill="#b77232" opacity="0.6"/>
+  <circle cx="160" cy="100" r="4" fill="#b77232" opacity="0.6"/>
+  <circle cx="140" cy="140" r="4" fill="#b77232" opacity="0.6"/>
+  <circle cx="100" cy="160" r="4" fill="#b77232" opacity="0.6"/>
+  <circle cx="60" cy="140" r="4" fill="#b77232" opacity="0.6"/>
+  <circle cx="40" cy="100" r="4" fill="#b77232" opacity="0.6"/>
+  <circle cx="60" cy="60" r="4" fill="#b77232" opacity="0.6"/>
+</svg>
