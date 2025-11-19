@@ -78,15 +78,16 @@ function simulatePayment() {
         `;
     }
     
-    // Simulate payment processing
+    // Simulate payment processing - reduced to 2 seconds for better UX
     setTimeout(() => {
         window.location.href = '/Success';
-    }, 3000);
+    }, 2000);
 }
 
 // Auto-start payment on page load for payment screen
 if (window.location.pathname === '/Payment') {
+    // Reduced delay to 500ms for immediate feedback
     setTimeout(() => {
         simulatePayment();
-    }, 1000);
+    }, 500);
 }
