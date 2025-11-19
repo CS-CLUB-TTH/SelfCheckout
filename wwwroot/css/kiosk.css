@@ -385,7 +385,7 @@ body {
 }
 
 .cart-summary {
-    background: linear-gradient(135deg, rgba(244, 216, 75, 0.95) 0%, rgba(244, 216, 75, 1) 100%);
+    background: linear-gradient(135deg, rgba(218, 179, 144, 0.95) 0%, rgba(218, 179, 144, 1) 100%);
     border-radius: var(--fm-radius-lg);
     padding: 45px;
     box-shadow: var(--fm-shadow-md);
