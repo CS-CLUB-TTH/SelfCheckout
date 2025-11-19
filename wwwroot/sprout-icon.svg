@@ -1,0 +1,17 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Sprout/Growth icon -->
+  <path d="M60 90V50" stroke="#4b9762" stroke-width="4" stroke-linecap="round"/>
+  
+  <!-- Left leaf -->
+  <path d="M60 60C60 60 40 50 30 40C25 35 25 28 30 25C35 22 45 25 50 35C55 45 60 55 60 60Z" 
+        fill="#8db765" opacity="0.9"/>
+  <path d="M35 35C40 40 50 48 60 60" stroke="#163f36" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
+  
+  <!-- Right leaf -->
+  <path d="M60 55C60 55 80 45 90 35C95 30 95 23 90 20C85 17 75 20 70 30C65 40 60 50 60 55Z" 
+        fill="#4b9762" opacity="0.9"/>
+  <path d="M85 30C80 35 70 43 60 55" stroke="#163f36" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
+  
+  <!-- Stem base -->
+  <ellipse cx="60" cy="92" rx="8" ry="4" fill="#163f36" opacity="0.3"/>
+</svg>

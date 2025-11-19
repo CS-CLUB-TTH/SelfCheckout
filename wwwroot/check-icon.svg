@@ -1,0 +1,16 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Modern checkmark circle -->
+  <circle cx="100" cy="100" r="90" fill="#4b9762" opacity="0.95"/>
+  <circle cx="100" cy="100" r="90" stroke="#f4d84b" stroke-width="6" opacity="0.8"/>
+  
+  <!-- Checkmark -->
+  <path d="M60 100L85 125L140 70" 
+        stroke="#ffffff" 
+        stroke-width="16" 
+        stroke-linecap="round" 
+        stroke-linejoin="round"
+        fill="none"/>
+  
+  <!-- Inner glow -->
+  <circle cx="100" cy="100" r="75" fill="white" opacity="0.1"/>
+</svg>
