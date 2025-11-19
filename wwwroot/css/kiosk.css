@@ -385,11 +385,11 @@ body {
 }
 
 .cart-summary {
-    background: linear-gradient(135deg, rgba(244, 216, 75, 0.95) 0%, rgba(244, 216, 75, 1) 100%);
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
     border-radius: var(--fm-radius-lg);
     padding: 45px;
-    box-shadow: var(--fm-shadow-md);
-    border: 3px solid var(--fm-brown);
+    box-shadow: var(--fm-shadow-lg);
+    border: 4px solid var(--fm-green);
     position: sticky;
     top: 0;
     overflow: hidden;
@@ -402,7 +402,7 @@ body {
     right: -50%;
     width: 100%;
     height: 100%;
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(75, 151, 98, 0.08) 0%, transparent 70%);
 }
 
 .summary-row {
@@ -417,12 +417,12 @@ body {
 }
 
 .summary-total {
-    border-top: 4px solid var(--fm-dark-green);
+    border-top: 4px solid var(--fm-green);
     padding-top: 28px;
     margin-top: 28px;
     font-size: 42px;
     font-weight: 900;
-    color: var(--fm-dark-green);
+    color: var(--fm-green);
     position: relative;
     z-index: 1;
     letter-spacing: -0.5px;
