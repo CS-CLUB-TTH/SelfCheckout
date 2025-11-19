@@ -1,0 +1,26 @@
+@page
+@model PaymentModel
+@{
+    ViewData["Title"] = "Payment Processing";
+    Layout = "_KioskLayout";
+}
+
+<div class="payment-screen">
+    <div class="payment-content">
+        <div class="payment-icon">💳</div>
+        <h1 class="payment-title">Payment Processing</h1>
+        <div class="payment-amount">AED 103.95</div>
+        <p class="payment-instruction">Please tap your card on the terminal</p>
+        
+        <div class="payment-terminal">
+            <div class="terminal-placeholder">
+                Magnati Terminal<br/>
+                <small style="font-size: 16px;">(Hardware Integration)</small>
+            </div>
+        </div>
+        
+        <p class="payment-instruction" style="font-size: 20px; margin-top: 20px;">
+            Waiting for card tap...
+        </p>
+    </div>
+</div>

@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "SelfCheckoutKiosk": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://0.0.0.0:61439;http://0.0.0.0:61440"
+    }
+  }
+}
