@@ -6,6 +6,12 @@
 }
 
 <a href="/Cart" class="idle-screen">
+    <!-- Full-screen rolling background graphic -->
+    <div class="rolling-background">
+        <img src="~/Graphic.svg" alt="" class="rolling-graphic" />
+        <img src="~/Graphic.svg" alt="" class="rolling-graphic" />
+    </div>
+    
     <div class="idle-logo">
         <div class="idle-logo-text">
             <img src="~/Logo6.svg" alt="Farmers Market" class="idle-logo-image" />
@@ -19,7 +25,7 @@
         </video>
     </div>
     
-    <!-- Decorative elements -->
-    <img src="~/leaf-decoration2.svg" alt="" style="position: absolute; top: 10%; left: 5%; width: 80px; opacity: 0.3;" />
-    <img src="~/leaf-decoration2.svg" alt="" style="position: absolute; bottom: 15%; right: 8%; width: 90px; opacity: 0.53;" />
+    <!-- Keep existing leaf decorations for additional detail -->
+    @* <img src="~/leaf-decoration2.svg" alt="" style="position: absolute; top: 10%; left: 5%; width: 80px; opacity: 0.3; z-index: 2;" />
+    <img src="~/leaf-decoration2.svg" alt="" style="position: absolute; bottom: 15%; right: 8%; width: 90px; opacity: 0.53; z-index: 2;" /> *@
 </a>

@@ -18,12 +18,12 @@ function returnToIdle() {
 // Initialize inactivity tracking
 document.addEventListener('DOMContentLoaded', () => {
     // Track user activity
-    ['click', 'touchstart', 'mousemove', 'keypress'].forEach(event => {
-        document.addEventListener(event, resetInactivityTimer);
-    });
+    //['click', 'touchstart', 'mousemove', 'keypress'].forEach(event => {
+    //    document.addEventListener(event, resetInactivityTimer);
+    //});
     
     // Start the timer
-    resetInactivityTimer();
+    /*resetInactivityTimer();*/
     
     // Update timer display if exists
     updateTimerDisplay();
@@ -71,7 +71,9 @@ function simulatePayment() {
     const paymentContent = document.querySelector('.payment-content');
     if (paymentContent) {
         paymentContent.innerHTML = `
-            <div class="payment-icon">💳</div>
+            <div class="payment-icon">
+                <img src="/card-icon.svg" alt="Payment" style="width: 180px; height: 180px; filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.3));" />
+            </div>
             <h1 class="payment-title">Processing Payment...</h1>
             <div class="spinner"></div>
             <p class="payment-instruction">Please wait</p>

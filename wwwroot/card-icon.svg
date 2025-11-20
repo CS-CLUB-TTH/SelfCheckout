@@ -1,21 +1,18 @@
-<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Modern payment card icon -->
-  <rect x="30" y="60" width="140" height="90" rx="12" fill="#163f36" opacity="0.95"/>
-  <rect x="30" y="60" width="140" height="90" rx="12" stroke="#f4d84b" stroke-width="3" opacity="0.8"/>
-  
-  <!-- Card stripe -->
-  <rect x="30" y="80" width="140" height="20" fill="#b77232" opacity="0.8"/>
-  
-  <!-- Chip -->
-  <rect x="50" y="110" width="30" height="24" rx="4" fill="#f4d84b" opacity="0.9"/>
-  <rect x="53" y="113" width="24" height="18" rx="2" fill="#dab390"/>
-  
-  <!-- Card details lines -->
-  <line x1="100" y1="120" x2="160" y2="120" stroke="#f4d84b" stroke-width="3" opacity="0.6" stroke-linecap="round"/>
-  <line x1="100" y1="130" x2="140" y2="130" stroke="#f4d84b" stroke-width="3" opacity="0.5" stroke-linecap="round"/>
-  
-  <!-- Contactless waves -->
-  <path d="M135 95C140 98 145 103 145 110" stroke="#f4d84b" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.7"/>
-  <path d="M140 92C147 96 154 103 154 113" stroke="#f4d84b" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.5"/>
-  <path d="M145 89C154 94 163 103 163 116" stroke="#f4d84b" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.3"/>
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Tap card to pay">
+	<title>Tap card to pay</title>
+
+	<!-- Card -->
+	<rect x="30" y="75" width="140" height="90" rx="14" fill="#FFFFFF"/>
+
+	<!-- Minimal detail lines on card -->
+	<rect x="45" y="95" width="24" height="18" rx="4" fill="#163f36" opacity="0.1"/>
+	<line x1="80" y1="100" x2="150" y2="100" stroke="#163f36" stroke-linecap="round" stroke-width="4" opacity="0.12"/>
+	<line x1="80" y1="115" x2="130" y2="115" stroke="#163f36" stroke-linecap="round" stroke-width="4" opacity="0.1"/>
+
+	<!-- Centered, clean NFC waves -->
+	<g transform="translate(100, 55)" stroke="#f4d84b" stroke-linecap="round" fill="none" stroke-width="5">
+		<path d="M -20 -15 A 30 30 0 0 1 20 -15" />
+		<path d="M -30 -20 A 45 45 0 0 1 30 -20" />
+		<path d="M -40 -25 A 60 60 0 0 1 40 -25" />
+	</g>
 </svg>
