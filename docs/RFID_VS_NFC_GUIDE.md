@@ -82,7 +82,7 @@ Your current implementation using Web NFC is **actually reading RFID cards** - s
 - ❌ 4cm range limitation
 - ❌ Does not work with UHF RFID cards
 
-**Current Code Location:** `/wwwroot/js/kiosk.js` (lines 124-248)
+**Current Code Location:** `/wwwroot/js/kiosk.js` (NFC handling function in IIFE)
 
 ---
 

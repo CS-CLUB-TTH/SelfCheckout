@@ -292,11 +292,15 @@ dependencies {
     const statusEl = document.getElementById('nfcStatus');
     const cancelBtn = document.getElementById('nfcCancel');
     let scanInterval;
+    
+    // Configure API endpoint (default: localhost:8080)
+    // Can be overridden via window.RFID_API_BASE_URL
+    const API_BASE_URL = window.RFID_API_BASE_URL || 'http://localhost:8080';
 
     // Check if native RFID app is running
     async function checkNativeAppStatus() {
         try {
-            const response = await fetch('http://localhost:8080/status', {
+            const response = await fetch(`${API_BASE_URL}/status`, {
                 method: 'GET',
                 cache: 'no-cache'
             });
@@ -324,7 +328,7 @@ dependencies {
         // Poll for card scans
         scanInterval = setInterval(async () => {
             try {
-                const response = await fetch('http://localhost:8080/scan', {
+                const response = await fetch(`${API_BASE_URL}/scan`, {
                     method: 'GET',
                     cache: 'no-cache'
                 });
