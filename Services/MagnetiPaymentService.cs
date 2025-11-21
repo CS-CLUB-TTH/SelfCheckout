@@ -34,7 +34,11 @@ public class MagnetiPaymentService : IMagnetiPaymentService
         _httpClient.BaseAddress = new Uri(baseUrl);
         
         var apiKey = _configuration[ApiKeyKey];
-        if (!string.IsNullOrEmpty(apiKey))
+        if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            _logger.LogWarning("Magneti API key is not configured. Payment processing may fail.");
+        }
+        else
         {
             _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
         }

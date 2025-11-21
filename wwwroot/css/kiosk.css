@@ -297,7 +297,7 @@ body {
 /* Cart Screen Styles */
 .cart-screen {
     width: 100%;
-    height: 100vh;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
     background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
@@ -507,6 +507,14 @@ body {
     font-size: 22px;
     color: #666;
     font-weight: 500;
+}
+
+/* Alert Message Styling */
+.cart-error-alert {
+    margin: 20px 60px;
+    font-size: 18px;
+    padding: 15px;
+    border-radius: 12px;
 }
 
 .cart-summary-container {

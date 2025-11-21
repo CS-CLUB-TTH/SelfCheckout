@@ -10,6 +10,9 @@ public class PaymentModel : PageModel
     private readonly IMagnetiPaymentService _paymentService;
     private readonly ILogger<PaymentModel> _logger;
 
+    // Configuration constants
+    private const int TransactionIdGuidLength = 8;
+
     public PaymentModel(IMagnetiPaymentService paymentService, ILogger<PaymentModel> logger)
     {
         _paymentService = paymentService;
@@ -63,7 +66,7 @@ public class PaymentModel : PageModel
             CustomerId = TempData["CustomerId"] as int?;
 
             // Generate unique transaction ID
-            var transactionId = $"TXN-{DateTime.UtcNow:yyyyMMddHHmmss}-{Guid.NewGuid().ToString("N")[..8].ToUpper()}";
+            var transactionId = $"TXN-{DateTime.UtcNow:yyyyMMddHHmmss}-{Guid.NewGuid().ToString("N")[..TransactionIdGuidLength].ToUpper()}";
 
             _logger.LogInformation(
                 "Initiating payment - TransactionId: {TransactionId}, Amount: {Amount}, Customer: {CustomerId}",
