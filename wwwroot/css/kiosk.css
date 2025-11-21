@@ -294,10 +294,43 @@ body {
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
+.tap-to-start-button {
+    background: linear-gradient(135deg, var(--fm-dark-green) 0%, var(--fm-green) 100%);
+    color: white;
+    border: none;
+    padding: 30px 70px;
+    font-size: 36px;
+    font-weight: 800;
+    border-radius: var(--fm-radius-xl);
+    cursor: pointer;
+    transition: var(--fm-transition);
+    box-shadow: var(--fm-shadow-lg);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    min-height: 90px;
+    min-width: 400px;
+    position: relative;
+    z-index: 3;
+    margin-top: 40px;
+    animation: pulseScale 2s ease-in-out infinite;
+    text-shadow: 0 3px 12px rgba(0, 0, 0, 0.4);
+}
+
+.tap-to-start-button:hover {
+    background: linear-gradient(135deg, var(--fm-green) 0%, var(--fm-light-green) 100%);
+    transform: scale(1.08) translateY(-4px);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+}
+
+.tap-to-start-button:active {
+    transform: scale(1.05) translateY(-2px);
+}
+
 /* Cart Screen Styles */
 .cart-screen {
     width: 100%;
     height: 100vh;
+    max-height: 100vh;
     display: flex;
     flex-direction: column;
     background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
@@ -364,7 +397,7 @@ body {
 }
 
 .cart-content {
-    flex: 1;
+    flex: 1 1 auto;
     display: flex;
     padding: 30px 60px 0 60px;
     overflow: hidden;
@@ -561,6 +594,7 @@ body {
 
 .cart-footer {
     padding: 30px 70px;
+    padding-bottom: calc(30px + env(safe-area-inset-bottom, 0px));
     background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
     box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.12);
     display: flex;
@@ -909,6 +943,7 @@ body {
 .feedback-screen {
     width: 100%;
     height: 100vh;
+    max-height: 100vh;
     display: flex;
     flex-direction: column;
     background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
@@ -973,7 +1008,7 @@ body {
 }
 
 .feedback-content {
-    flex: 1;
+    flex: 1 1 auto;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -1117,6 +1152,7 @@ body {
 
 .feedback-footer {
     padding: 30px 70px;
+    padding-bottom: calc(30px + env(safe-area-inset-bottom, 0px));
     background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
     box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.12);
     text-align: center;
