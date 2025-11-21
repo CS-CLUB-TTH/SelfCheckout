@@ -20,6 +20,8 @@ public class DatabaseService : IDatabaseService
         _connectionString = configuration.GetConnectionString("DefaultConnection") 
             ?? throw new InvalidOperationException("Database connection string not configured");
         _logger = logger;
+
+        DefaultTypeMap.MatchNamesWithUnderscores = true;
     }
 
     public async Task<int?> GetCustomerKeyByCardNo(string cardNo)

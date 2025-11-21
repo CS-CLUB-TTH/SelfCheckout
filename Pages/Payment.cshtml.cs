@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using SelfCheckoutKiosk.Models;
 using SelfCheckoutKiosk.Services;
+using System.Globalization; // added for decimal parsing from TempData
 
 namespace SelfCheckoutKiosk.Pages;
 
@@ -29,11 +30,11 @@ public class PaymentModel : PageModel
     public IActionResult OnGet()
     {
         // Retrieve cart information from TempData
-        if (TempData["CartTotal"] is decimal total)
+        if (TryGetDecimalFromTempData("CartTotal", out var total))
         {
             Amount = total;
-            Subtotal = TempData["CartSubtotal"] as decimal? ?? 0;
-            Tax = TempData["CartTax"] as decimal? ?? 0;
+            Subtotal = TryGetDecimalFromTempData("CartSubtotal", out var subtotal) ? subtotal : 0m;
+            Tax = TryGetDecimalFromTempData("CartTax", out var tax) ? tax : 0m;
             CustomerId = TempData["CustomerId"] as int?;
             ItemCount = TempData["CartItemCount"] as int? ?? 0;
 
@@ -56,7 +57,7 @@ public class PaymentModel : PageModel
         try
         {
             // Retrieve cart information
-            if (TempData["CartTotal"] is not decimal total)
+            if (!TryGetDecimalFromTempData("CartTotal", out var total))
             {
                 _logger.LogError("Payment processing failed - no cart data");
                 return RedirectToPage("/Index");
@@ -87,7 +88,7 @@ public class PaymentModel : PageModel
 
             // Store payment result in TempData for success/failure pages
             TempData["PaymentTransactionId"] = response.TransactionId;
-            TempData["PaymentAmount"] = response.Amount;
+            TempData["PaymentAmount"] = response.Amount.ToString(CultureInfo.InvariantCulture); // store decimal as string
             TempData["PaymentAuthCode"] = response.AuthorizationCode;
             TempData["PaymentReferenceNumber"] = response.ReferenceNumber;
             TempData["PaymentCardType"] = response.CardType;
@@ -147,5 +148,30 @@ public class PaymentModel : PageModel
             _logger.LogError(ex, "Error checking payment status for {TransactionId}", transactionId);
             return new JsonResult(new { success = false, error = "Status check failed" });
         }
+    }
+
+    private bool TryGetDecimalFromTempData(string key, out decimal value)
+    {
+        value = 0m;
+        if (!TempData.TryGetValue(key, out var obj) || obj is null)
+        {
+            return false;
+        }
+
+        // Values are stored as invariant strings
+        if (obj is string s && decimal.TryParse(s, NumberStyles.Number, CultureInfo.InvariantCulture, out var parsed))
+        {
+            value = parsed;
+            return true;
+        }
+
+        // Fallback: if someone placed a decimal directly into TempData via a custom provider
+        if (obj is decimal d)
+        {
+            value = d;
+            return true;
+        }
+
+        return false;
     }
 }

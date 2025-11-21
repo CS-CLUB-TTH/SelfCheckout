@@ -164,15 +164,18 @@ if ('serviceWorker' in navigator) {
     }
 
     // Handle NFC card read
+    function nfcHexToDecimal(hexUID) {
+        const bytes = hexUID.split(":").reverse(); // reverse for little-endian
+        return parseInt(bytes.join(""), 16);
+    }
+
     function handleNfcRead(event) {
         const { serialNumber, message } = event;
-        
+
         updateStatus('detected', 'success');
 
-        // Extract card identifier (prefer serial number)
         let cardIdentifier = serialNumber;
-        
-        // Fallback to message payload if no serial number
+
         if (!cardIdentifier && message.records.length > 0) {
             try {
                 const decoder = new TextDecoder();
@@ -190,12 +193,24 @@ if ('serviceWorker' in navigator) {
             return;
         }
 
-        console.log('✓ Card detected:', cardIdentifier);
+        console.log("Raw NFC value:", cardIdentifier);
+
+        let convertedIdentifier = cardIdentifier;
+
+        if (/^([0-9A-F]{2}:){3,}[0-9A-F]{2}$/i.test(cardIdentifier)) {
+            convertedIdentifier = nfcHexToDecimal(cardIdentifier);
+            console.log("Converted NFC → Decimal:", convertedIdentifier);
+        }
+
+        else {
+            console.log("Non-hex NFC value, sending as is.");
+        }
+
         updateStatus('loading', 'success');
 
         // Navigate to cart
         setTimeout(() => {
-            window.location.href = `/Cart/LoadFromCard?cardNo=${encodeURIComponent(cardIdentifier)}`;
+            window.location.href = `/Cart?handler=LoadFromCard&cardNo=${encodeURIComponent(convertedIdentifier)}`;
         }, 800);
     }
 

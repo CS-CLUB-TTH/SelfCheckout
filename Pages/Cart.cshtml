@@ -30,14 +30,6 @@
                         <div class="cart-item">
                             <div class="item-info">
                                 <div class="item-name">@item.ProdBillDesc</div>
-                                @if (!string.IsNullOrEmpty(item.OrderedBy))
-                                {
-                                    <div class="item-details">Ordered by: @item.OrderedBy</div>
-                                }
-                                @if (!string.IsNullOrEmpty(item.CourseDesc))
-                                {
-                                    <div class="item-details">@item.CourseDesc</div>
-                                }
                             </div>
                             <div class="item-quantity">x @item.Qty.ToString("0.##")</div>
                             <div class="item-price">AED @item.Amount.ToString("0.00")</div>

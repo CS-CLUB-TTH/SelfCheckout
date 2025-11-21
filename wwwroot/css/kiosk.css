@@ -297,7 +297,7 @@ body {
 /* Cart Screen Styles */
 .cart-screen {
     width: 100%;
-    min-height: 100vh;
+    height: 100vh;
     display: flex;
     flex-direction: column;
     background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
@@ -380,6 +380,7 @@ body {
     box-shadow: var(--fm-shadow-md);
     border: 3px solid rgba(244, 216, 75, 0.4);
     margin-bottom: 20px;
+    max-height: 100%;
     /* Custom scrollbar for webkit browsers */
     scrollbar-width: thin;
     scrollbar-color: var(--fm-yellow) rgba(244, 216, 75, 0.2);
@@ -537,8 +538,8 @@ body {
 .summary-row {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 15px;
-    font-size: 24px;
+    margin-bottom: 12px;
+    font-size: 22px;
     font-weight: 600;
     color: var(--fm-dark-green);
     position: relative;
@@ -547,9 +548,9 @@ body {
 
 .summary-total {
     border-top: 4px solid var(--fm-dark-green);
-    padding-top: 15px;
+    padding-top: 12px;
     margin-top: 5px;
-    font-size: 32px;
+    font-size: 28px;
     font-weight: 900;
     color: var(--fm-dark-green);
     position: relative;
@@ -559,19 +560,19 @@ body {
 }
 
 .cart-footer {
-    padding: 18px 60px 20px 60px;
+    padding: 30px 70px;
     background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
     box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.12);
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 15px;
     flex-shrink: 0;
 }
 
 .cart-footer .cart-summary {
-    background: linear-gradient(135deg, rgba(218, 179, 144, 0.95) 0%, rgba(218, 179, 144, 1) 100%);
+    background: linear-gradient(135deg, rgba(218,179,144,0.95) 0%, rgba(218,179,144,1) 100%);
     border-radius: var(--fm-radius-lg);
-    padding: 20px 30px 18px 30px;
+    padding: 18px 30px 16px 30px;
     box-shadow: var(--fm-shadow-md);
     border: 3px solid var(--fm-brown);
     overflow: hidden;
@@ -585,8 +586,8 @@ body {
 
 .btn-kiosk {
     flex: 1;
-    padding: 25px 28px;
-    font-size: 22px;
+    padding: 20px 15px;
+    font-size: 20px;
     font-weight: 800;
     border: none;
     border-radius: var(--fm-radius-md);
@@ -594,7 +595,7 @@ body {
     transition: var(--fm-transition);
     text-transform: uppercase;
     letter-spacing: 1.5px;
-    min-height: 80px;
+    min-height: 70px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -907,20 +908,22 @@ body {
 /* Feedback Screen Styles */
 .feedback-screen {
     width: 100%;
-    height: 100%;
+    height: 100vh;
     display: flex;
     flex-direction: column;
     background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+    overflow: hidden;
 }
 
 .feedback-header {
     background: linear-gradient(135deg, var(--fm-dark-green) 0%, var(--fm-green) 100%);
     color: white;
-    padding: 40px 70px;
+    padding: 30px 60px;
     text-align: center;
     box-shadow: var(--fm-shadow-lg);
     position: relative;
     overflow: hidden;
+    flex-shrink: 0;
 }
 
 .feedback-header-graphic {
@@ -952,9 +955,9 @@ body {
 }
 
 .feedback-header h1 {
-    font-size: 60px;
+    font-size: 52px;
     font-weight: 800;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     text-shadow: 0 3px 15px rgba(0, 0, 0, 0.3);
     letter-spacing: -0.5px;
     position: relative;
@@ -962,7 +965,7 @@ body {
 }
 
 .feedback-subtitle {
-    font-size: 30px;
+    font-size: 26px;
     opacity: 0.98;
     font-weight: 500;
     position: relative;
@@ -975,32 +978,36 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    padding: 70px 20px;
-    gap: 60px;
+    padding: 30px 20px;
+    gap: 40px;
+    overflow-y: auto;
+    min-height: 0;
 }
 
 .rating-container {
     width: 100%;
     max-width: 1200px;
+    flex-shrink: 0;
 }
 
 .rating-title {
-    font-size: 38px;
+    font-size: 34px;
     font-weight: 700;
     color: var(--fm-dark-green);
     text-align: center;
-    margin-bottom: 50px;
+    margin-bottom: 40px;
 }
 
 .rating-faces {
     display: flex;
     justify-content: center;
-    gap: 45px;
+    gap: 35px;
+    flex-wrap: wrap;
 }
 
 .rating-face {
-    width: 170px;
-    height: 170px;
+    width: 150px;
+    height: 150px;
     border-radius: 50%;
     cursor: pointer;
     transition: var(--fm-transition);
@@ -1008,7 +1015,7 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    font-size: 85px;
+    font-size: 70px;
     border: 6px solid transparent;
     position: relative;
     box-shadow: var(--fm-shadow-md);
@@ -1064,30 +1071,26 @@ body {
 .qr-section {
     text-align: center;
     background-color: white;
-    padding: 55px;
+    padding: 40px;
     border-radius: var(--fm-radius-lg);
     box-shadow: var(--fm-shadow-md);
     border: 3px solid rgba(244, 216, 75, 0.3);
-    max-width: 650px;
+    max-width: 600px;
     transition: var(--fm-transition);
-}
-
-.qr-section:hover {
-    box-shadow: var(--fm-shadow-lg);
-    transform: translateY(-3px);
+    flex-shrink: 0;
 }
 
 .qr-title {
-    font-size: 32px;
+    font-size: 28px;
     font-weight: 700;
     color: var(--fm-dark-green);
-    margin-bottom: 25px;
+    margin-bottom: 20px;
 }
 
 .qr-subtitle {
-    font-size: 20px;
+    font-size: 18px;
     color: #666;
-    margin-bottom: 35px;
+    margin-bottom: 30px;
     font-weight: 500;
 }
 
@@ -1107,32 +1110,33 @@ body {
 }
 
 .qr-code img {
-    width: 250px;
-    height: 250px;
+    width: 220px;
+    height: 220px;
     display: block;
 }
 
 .feedback-footer {
-    padding: 40px 70px;
+    padding: 30px 70px;
     background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
     box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.12);
     text-align: center;
+    flex-shrink: 0;
 }
 
 .return-button {
     background: linear-gradient(135deg, var(--fm-green) 0%, var(--fm-dark-green) 100%);
     color: white;
     border: none;
-    padding: 32px 85px;
-    font-size: 32px;
+    padding: 25px 80px;
+    font-size: 28px;
     font-weight: 800;
     border-radius: var(--fm-radius-md);
     cursor: pointer;
     transition: var(--fm-transition);
     text-transform: uppercase;
     letter-spacing: 1.5px;
-    min-height: 95px;
-    min-width: 380px;
+    min-height: 80px;
+    min-width: 350px;
     box-shadow: var(--fm-shadow-md);
     position: relative;
     overflow: hidden;

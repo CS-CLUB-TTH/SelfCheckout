@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using SelfCheckoutKiosk.Models;
 using SelfCheckoutKiosk.Services;
+using System.Globalization; // added for invariant culture when serializing decimals to TempData
 
 namespace SelfCheckoutKiosk.Pages;
 
@@ -69,11 +70,12 @@ public class CartModel : PageModel
 
             // Store cart information in TempData for payment processing
             CustomerId = cusKey.Value;
-            TempData["CustomerId"] = CustomerId;
-            TempData["CartTotal"] = Total;
-            TempData["CartSubtotal"] = Subtotal;
-            TempData["CartTax"] = Tax;
-            TempData["CartItemCount"] = CartItems.Count;
+            TempData["CustomerId"] = CustomerId; // int is supported
+            // Decimal is not supported by DefaultTempDataSerializer; store as invariant strings
+            TempData["CartTotal"] = Total.ToString(CultureInfo.InvariantCulture);
+            TempData["CartSubtotal"] = Subtotal.ToString(CultureInfo.InvariantCulture);
+            TempData["CartTax"] = Tax.ToString(CultureInfo.InvariantCulture);
+            TempData["CartItemCount"] = CartItems.Count; // int is supported
 
             _logger.LogInformation("Loaded {Count} items for customer {CusKey}, Total: {Total}", 
                 CartItems.Count, cusKey, Total);
