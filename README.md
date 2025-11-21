@@ -1,12 +1,14 @@
 # Self Checkout Kiosk
 
-A modern self-checkout kiosk application built with ASP.NET Core Razor Pages, featuring NFC card integration and automated cart loading.
+A modern self-checkout kiosk application built with ASP.NET Core Razor Pages, featuring NFC card integration, automated cart loading, and Magneti payment gateway integration.
 
 ## Features
 
 - **NFC Card Integration**: Customers can tap their NFC card to automatically load their cart
 - **Dynamic Cart Loading**: Cart items are loaded from the database based on customer's pending orders
+- **Magneti Payment Integration**: Secure payment processing through Magneti payment gateway
 - **Real-time Total Calculation**: Automatically calculates subtotal, tax (VAT), and total
+- **Transaction Tracking**: Complete transaction logging with authorization codes and references
 - **Modern UI**: Clean, responsive interface optimized for kiosk displays
 - **PWA Support**: Progressive Web App capabilities for offline support
 
@@ -15,6 +17,7 @@ A modern self-checkout kiosk application built with ASP.NET Core Razor Pages, fe
 - .NET 8.0 SDK
 - SQL Server database with the CUBES schema
 - NFC-compatible device/browser (for testing NFC functionality)
+- Magneti payment gateway account (API credentials required)
 
 ## Database Setup
 
@@ -55,7 +58,41 @@ The application requires a SQL Server database with the following:
    set ConnectionStrings__DefaultConnection=Server=...
    ```
 
-2. **Configure for Development**
+2. **Configure Magneti Payment Gateway**
+
+   Add Magneti configuration to `appsettings.json`:
+
+   ```json
+   {
+     "Magneti": {
+       "ApiBaseUrl": "https://sandbox.mgipayments.com/api",
+       "ApiKey": "YOUR_MAGNETI_API_KEY",
+       "MerchantId": "YOUR_MERCHANT_ID",
+       "TerminalId": "YOUR_TERMINAL_ID"
+     }
+   }
+   ```
+
+   **For Production:**
+   - Update `ApiBaseUrl` to production endpoint: `https://api.mgipayments.com/api`
+   - Use production API credentials
+   - Store credentials in environment variables:
+
+   ```bash
+   # Linux/macOS
+   export Magneti__ApiKey="your-api-key"
+   export Magneti__MerchantId="your-merchant-id"
+   export Magneti__TerminalId="your-terminal-id"
+   
+   # Windows
+   set Magneti__ApiKey=your-api-key
+   set Magneti__MerchantId=your-merchant-id
+   set Magneti__TerminalId=your-terminal-id
+   ```
+
+   **Note**: See [docs/MAGNETI_INTEGRATION.md](docs/MAGNETI_INTEGRATION.md) for detailed integration documentation.
+
+3. **Configure for Development**
 
    Create `appsettings.Development.json` (this file is gitignored):
 
@@ -63,6 +100,12 @@ The application requires a SQL Server database with the following:
    {
      "ConnectionStrings": {
        "DefaultConnection": "Your-Development-Connection-String-Here"
+     },
+     "Magneti": {
+       "ApiBaseUrl": "https://sandbox.mgipayments.com/api",
+       "ApiKey": "YOUR_TEST_API_KEY",
+       "MerchantId": "TEST_MERCHANT_ID",
+       "TerminalId": "TEST_TERMINAL_ID"
      }
    }
    ```
@@ -89,6 +132,34 @@ The application requires a SQL Server database with the following:
 
 ## How It Works
 
+### Complete Flow
+
+1. **Customer arrives at kiosk** → Idle screen with video playing
+2. **Tap anywhere** → Navigate to NFC page
+3. **NFC card scan:**
+   - Customer taps NFC card
+   - System reads card number
+   - Redirects to `/Cart/LoadFromCard?cardNo=...`
+4. **Cart loading:**
+   - Looks up customer in database by card number
+   - Retrieves pending orders via stored procedure
+   - Calculates totals (subtotal, tax, total)
+   - Displays all items in cart
+5. **Proceed to payment:**
+   - Customer clicks "Proceed to Payment"
+   - Redirects to payment page with cart data
+6. **Payment processing:**
+   - Auto-initiates payment with Magneti gateway
+   - Generates unique transaction ID
+   - Sends payment request with amount and details
+   - Waits for payment response
+7. **Payment result:**
+   - **If approved:** Shows success page with transaction details
+   - **If declined:** Shows error, allows retry
+8. **Feedback & Return:**
+   - Customer provides feedback rating
+   - Returns to idle screen
+
 ### NFC Flow
 
 1. Customer navigates to the NFC page (`/Nfc`)
@@ -105,6 +176,29 @@ The application requires a SQL Server database with the following:
    - Subtotal (sum of all item amounts)
    - Tax (sum of all VAT amounts)
    - Total (subtotal + tax)
+
+### Payment Flow
+
+1. **Payment Initiation:**
+   - Cart data (total, customer ID) passed via TempData
+   - Payment page loads with amount display
+   - Auto-submits payment request after 1 second
+
+2. **Payment Processing:**
+   - Generates transaction ID: `TXN-{timestamp}-{guid}`
+   - Creates `MagnetiPaymentRequest` with:
+     - Amount, Currency (AED)
+     - Customer ID, Description
+   - Sends POST to Magneti API: `/v1/transactions/process`
+
+3. **Response Handling:**
+   - **Approved**: Stores transaction details, redirects to Success
+   - **Declined/Error**: Shows error message, keeps cart data for retry
+
+4. **Success Display:**
+   - Shows transaction ID, authorization code
+   - Displays reference number and card details (masked)
+   - Auto-redirects to feedback after 3 seconds
 
 ### Cart Display
 
@@ -123,6 +217,9 @@ The application handles various error cases:
 - **Empty Cart**: Informs user if no pending items exist
 - **Database Errors**: Logs errors and displays user-friendly message
 - **NFC Not Supported**: Detects and informs if device doesn't support NFC
+- **Payment Declined**: Shows error, allows retry with same cart
+- **Payment Gateway Error**: Logs error, shows user-friendly message
+- **Network Issues**: Handles connection errors gracefully
 
 ## Project Structure
 

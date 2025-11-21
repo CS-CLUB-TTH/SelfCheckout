@@ -15,7 +15,7 @@
     
     @if (!string.IsNullOrEmpty(Model.ErrorMessage))
     {
-        <div class="alert alert-warning text-center" role="alert">
+        <div class="alert alert-warning text-center cart-error-alert" role="alert">
             <strong>@Model.ErrorMessage</strong>
         </div>
     }
@@ -47,9 +47,10 @@
             }
             else
             {
-                <div class="text-center py-5">
-                    <p class="lead">Your cart is empty</p>
-                    <p>Scan your NFC card to load your items</p>
+                <div class="empty-cart-message">
+                    <div class="empty-cart-icon">🛒</div>
+                    <h2 class="empty-cart-title">Your cart is empty</h2>
+                    <p class="empty-cart-text">Scan your NFC card to load your items</p>
                 </div>
             }
         </div>
@@ -87,8 +88,8 @@
     else
     {
         <div class="cart-footer">
-            <div class="cart-footer-buttons">
-                <button class="btn-kiosk btn-cancel" onclick="window.location.href='/'">Return to Home</button>
+            <div class="cart-footer-buttons" style="justify-content: center;">
+                <button class="btn-kiosk btn-cancel" onclick="window.location.href='/'" style="max-width: 400px;">Return to Home</button>
             </div>
         </div>
     }
