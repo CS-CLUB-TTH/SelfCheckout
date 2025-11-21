@@ -61,9 +61,10 @@ public class CartModel : PageModel
             }
 
             // Calculate totals
+            // Amount includes item cost minus discounts, VatAmt is the VAT
             Subtotal = CartItems.Sum(item => item.Amount);
             Tax = CartItems.Sum(item => item.VatAmt);
-            Total = Subtotal; // Total already includes tax in the amount
+            Total = Subtotal + Tax; // Total = subtotal + tax
 
             _logger.LogInformation("Loaded {Count} items for customer {CusKey}, Total: {Total}", 
                 CartItems.Count, cusKey, Total);
