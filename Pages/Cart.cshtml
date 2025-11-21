@@ -11,81 +11,86 @@
             <img src="~/Graphic.svg" alt="Graphic" />
         </div>
         <h1>Your Cart</h1>
-        @* <p class="cart-instruction">Please review your items and proceed to payment</p> *@
     </div>
+    
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-warning text-center" role="alert">
+            <strong>@Model.ErrorMessage</strong>
+        </div>
+    }
     
     <div class="cart-content">
         <div class="cart-items-container">
-            <div class="cart-items">
-                <div class="cart-item">
-                    <div class="item-info">
-                        <div class="item-name">Fresh Organic Tomatoes</div>
-                        <div class="item-details">1 kg</div>
-                    </div>
-                    <div class="item-quantity">x 2</div>
-                    <div class="item-price">AED 15.00</div>
+            @if (Model.CartItems.Any())
+            {
+                <div class="cart-items">
+                    @foreach (var item in Model.CartItems)
+                    {
+                        <div class="cart-item">
+                            <div class="item-info">
+                                <div class="item-name">@item.ProdBillDesc</div>
+                                @if (!string.IsNullOrEmpty(item.OrderedBy))
+                                {
+                                    <div class="item-details">Ordered by: @item.OrderedBy</div>
+                                }
+                                @if (!string.IsNullOrEmpty(item.CourseDesc))
+                                {
+                                    <div class="item-details">@item.CourseDesc</div>
+                                }
+                            </div>
+                            <div class="item-quantity">x @item.Qty.ToString("0.##")</div>
+                            <div class="item-price">AED @item.Amount.ToString("0.00")</div>
+                        </div>
+                    }
                 </div>
-                
-                <div class="cart-item">
-                    <div class="item-info">
-                        <div class="item-name">Organic Carrots</div>
-                        <div class="item-details">500 g</div>
-                    </div>
-                    <div class="item-quantity">x 1</div>
-                    <div class="item-price">AED 8.50</div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <p class="lead">Your cart is empty</p>
+                    <p>Scan your NFC card to load your items</p>
                 </div>
-                
-                <div class="cart-item">
-                    <div class="item-info">
-                        <div class="item-name">Fresh Spinach</div>
-                        <div class="item-details">Bundle</div>
-                    </div>
-                    <div class="item-quantity">x 3</div>
-                    <div class="item-price">AED 12.00</div>
-                </div>
-                
-                <div class="cart-item">
-                    <div class="item-info">
-                        <div class="item-name">Local Honey</div>
-                        <div class="item-details">500 ml</div>
-                    </div>
-                    <div class="item-quantity">x 1</div>
-                    <div class="item-price">AED 45.00</div>
-                </div>
-                
-                <div class="cart-item">
-                    <div class="item-info">
-                        <div class="item-name">Fresh Eggs</div>
-                        <div class="item-details">12 pcs</div>
-                    </div>
-                    <div class="item-quantity">x 1</div>
-                    <div class="item-price">AED 18.50</div>
-                </div>
-            </div>
+            }
         </div>
     </div>
     
-    <div class="cart-footer">
-        <div class="cart-summary-container">
-            <div class="cart-summary">
-                <div class="summary-row">
-                    <span>Subtotal:</span>
-                    <span>AED 99.00</span>
-                </div>
-                <div class="summary-row">
-                    <span>Tax (5%):</span>
-                    <span>AED 4.95</span>
-                </div>
-                <div class="summary-row summary-total">
-                    <span>Total:</span>
-                    <span>AED 103.95</span>
+    @if (Model.CartItems.Any())
+    {
+        <div class="cart-footer">
+            <div class="cart-summary-container">
+                <div class="cart-summary">
+                    <div class="summary-row">
+                        <span>Subtotal:</span>
+                        <span>AED @Model.Subtotal.ToString("0.00")</span>
+                    </div>
+                    @if (Model.Tax > 0)
+                    {
+                        <div class="summary-row">
+                            <span>Tax (VAT):</span>
+                            <span>AED @Model.Tax.ToString("0.00")</span>
+                        </div>
+                    }
+                    <div class="summary-row summary-total">
+                        <span>Total:</span>
+                        <span>AED @Model.Total.ToString("0.00")</span>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="cart-footer-buttons">
-            <button class="btn-kiosk btn-cancel">Cancel Order</button>
-            <button class="btn-kiosk btn-proceed">Proceed to Payment</button>
+            <div class="cart-footer-buttons">
+                <button class="btn-kiosk btn-cancel">Cancel Order</button>
+                <button class="btn-kiosk btn-proceed">Proceed to Payment</button>
+            </div>
         </div>
-    </div>
+    }
+    else
+    {
+        <div class="cart-footer">
+            <div class="cart-footer-buttons">
+                <button class="btn-kiosk btn-cancel" onclick="window.location.href='/'">Return to Home</button>
+            </div>
+        </div>
+    }
 </div>
+
