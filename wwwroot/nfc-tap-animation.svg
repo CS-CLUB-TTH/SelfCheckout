@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <!-- Gradient for card -->
+    <linearGradient id="cardGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Gradient for NFC symbol -->
+    <linearGradient id="nfcGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fbbf24;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f59e0b;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Glow filter -->
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    
+    <!-- Pulse animation -->
+    <style>
+      @keyframes cardTap {
+        0%, 100% { transform: translateY(0) rotate(-5deg); opacity: 0.9; }
+        50% { transform: translateY(-30px) rotate(-5deg); opacity: 1; }
+      }
+      
+      @keyframes wave1 {
+        0% { r: 20; opacity: 0.8; }
+        100% { r: 60; opacity: 0; }
+      }
+      
+      @keyframes wave2 {
+        0% { r: 20; opacity: 0.6; }
+        100% { r: 80; opacity: 0; }
+      }
+      
+      @keyframes wave3 {
+        0% { r: 20; opacity: 0.4; }
+        100% { r: 100; opacity: 0; }
+      }
+      
+      @keyframes rotate {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      
+      .card {
+        animation: cardTap 2s ease-in-out infinite;
+        transform-origin: center;
+      }
+      
+      .wave1 {
+        animation: wave1 2s ease-out infinite;
+      }
+      
+      .wave2 {
+        animation: wave2 2s ease-out infinite 0.3s;
+      }
+      
+      .wave3 {
+        animation: wave3 2s ease-out infinite 0.6s;
+      }
+      
+      .nfc-symbol {
+        filter: url(#glow);
+      }
+    </style>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="200" cy="200" r="150" fill="#0b5d1e" opacity="0.1"/>
+  
+  <!-- NFC waves (signal emanating) -->
+  <g class="nfc-waves">
+    <circle class="wave1" cx="200" cy="240" r="20" fill="none" stroke="url(#nfcGradient)" stroke-width="3"/>
+    <circle class="wave2" cx="200" cy="240" r="20" fill="none" stroke="url(#nfcGradient)" stroke-width="2"/>
+    <circle class="wave3" cx="200" cy="240" r="20" fill="none" stroke="url(#nfcGradient)" stroke-width="1.5"/>
+  </g>
+  
+  <!-- NFC Reader base -->
+  <g class="reader">
+    <rect x="120" y="220" width="160" height="80" rx="10" fill="#1f2937" opacity="0.9"/>
+    <rect x="130" y="230" width="140" height="60" rx="8" fill="#374151"/>
+    
+    <!-- NFC Symbol on reader -->
+    <g class="nfc-symbol" transform="translate(200, 260)">
+      <path d="M -15,-15 L -15,15" stroke="url(#nfcGradient)" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M -8,-12 Q -8,0 -8,12" stroke="url(#nfcGradient)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <path d="M 0,-8 Q 0,0 0,8" stroke="url(#nfcGradient)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <path d="M 8,-12 Q 8,0 8,12" stroke="url(#nfcGradient)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <circle cx="15" cy="0" r="2" fill="url(#nfcGradient)"/>
+    </g>
+  </g>
+  
+  <!-- Card being tapped -->
+  <g class="card">
+    <rect x="140" y="80" width="120" height="80" rx="8" fill="url(#cardGradient)" stroke="#e5e7eb" stroke-width="2"/>
+    
+    <!-- Card chip -->
+    <rect x="155" y="95" width="30" height="25" rx="3" fill="#fbbf24" opacity="0.8"/>
+    <rect x="158" y="98" width="24" height="19" rx="2" fill="#f59e0b"/>
+    
+    <!-- Card details lines -->
+    <line x1="155" y1="135" x2="245" y2="135" stroke="#e5e7eb" stroke-width="2" opacity="0.6"/>
+    <line x1="155" y1="145" x2="220" y2="145" stroke="#e5e7eb" stroke-width="2" opacity="0.6"/>
+    
+    <!-- NFC symbol on card -->
+    <g transform="translate(230, 110)">
+      <path d="M -5,-5 L -5,5" stroke="#fbbf24" stroke-width="1.5" fill="none"/>
+      <path d="M -2,-3 Q -2,0 -2,3" stroke="#fbbf24" stroke-width="1.2" fill="none"/>
+      <path d="M 1,-2 Q 1,0 1,2" stroke="#fbbf24" stroke-width="1.2" fill="none"/>
+      <circle cx="4" cy="0" r="1" fill="#fbbf24"/>
+    </g>
+  </g>
+  
+  <!-- Hand outline (subtle) -->
+  <g class="hand" opacity="0.3">
+    <path d="M 100,120 Q 95,140 100,160 L 110,165 Q 115,150 120,140 Z" fill="#9ca3af"/>
+  </g>
+  
+  <!-- Connecting lines (showing connection) -->
+  <g class="connection-lines" opacity="0.5">
+    <line x1="200" y1="160" x2="200" y2="220" stroke="#fbbf24" stroke-width="2" stroke-dasharray="5,5">
+      <animate attributeName="stroke-dashoffset" from="0" to="10" dur="1s" repeatCount="indefinite"/>
+    </line>
+  </g>
+  
+  <!-- Success checkmark (hidden by default, can be shown with CSS) -->
+  <g class="checkmark" opacity="0">
+    <circle cx="200" cy="200" r="40" fill="#10b981" opacity="0.9"/>
+    <path d="M 175,200 L 190,215 L 225,180" stroke="white" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

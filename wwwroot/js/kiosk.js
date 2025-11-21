@@ -128,150 +128,121 @@ if ('serviceWorker' in navigator) {
     const statusEl = document.getElementById('nfcStatus');
     const cancelBtn = document.getElementById('nfcCancel');
 
+    // Modern NFC scanner with clean error handling
     async function startNfcScan() {
         if (!statusEl) return;
 
+        // Check NFC support
         if (!('NDEFReader' in window)) {
-            statusEl.textContent = 'NFC not supported on this device';
-            statusEl.classList.add('error');
+            updateStatus('noSupport', 'error');
             return;
         }
 
         try {
-            statusEl.textContent = 'Requesting NFC access...';
-
-            // Explicit permission request for kiosk
+            updateStatus('requesting');
             const ndef = new NDEFReader();
 
-            // Method 1: Try with explicit permission request
-            try {
-                // This should trigger the permission prompt
-                await ndef.scan();
-                console.log('NFC permission granted');
-            } catch (scanError) {
-                console.log('First scan attempt failed:', scanError);
+            // Start scanning
+            await ndef.scan();
+            console.log('✓ NFC scan started');
+            
+            updateStatus('waiting', 'reading');
 
-                // Method 2: If first attempt fails, try with user gesture simulation
-                statusEl.textContent = 'Please tap to enable NFC...';
-
-                // Create a button to trigger NFC with user gesture
-                const enableButton = document.createElement('button');
-                enableButton.textContent = 'ENABLE NFC';
-                enableButton.style.cssText = `
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                padding: 20px;
-                font-size: 18px;
-                background: #007bff;
-                color: white;
-                border: none;
-                border-radius: 5px;
-                z-index: 10000;
-            `;
-
-                await new Promise((resolve) => {
-                    enableButton.onclick = async () => {
-                        document.body.removeChild(enableButton);
-                        try {
-                            await ndef.scan();
-                            resolve();
-                        } catch (e) {
-                            throw e;
-                        }
-                    };
-                    document.body.appendChild(enableButton);
-                });
-            }
-
-            statusEl.textContent = 'Hold card near reader...';
-            statusEl.classList.add('reading');
-
-            // Rest of your NFC reading logic
+            // Handle scan errors
             ndef.onreadingerror = () => {
-                statusEl.textContent = 'Read error. Try again';
-                statusEl.classList.remove('reading');
-                statusEl.classList.add('error');
+                updateStatus('error', 'error');
+                setTimeout(startNfcScan, 3000); // Retry after 3 seconds
             };
 
-            ndef.onreading = (event) => {
-                const { serialNumber, message } = event;
-                statusEl.textContent = 'Card detected - Loading products...';
-                statusEl.classList.add('success');
-
-                // Extract card data
-                let cardData = serialNumber; // Primary identifier
-                let payloadText = '';
-
-                for (const record of message.records) {
-                    try {
-                        const textDecoder = new TextDecoder(record.encoding || 'utf-8');
-                        payloadText += textDecoder.decode(record.data);
-                    } catch { }
-                }
-
-                // Use the card data (serial number or payload) as identifier
-                const cardIdentifier = cardData || payloadText;
-                
-                console.log('NFC Card detected:', cardIdentifier);
-
-                // Redirect to cart with card identifier
-                setTimeout(() => {
-                    window.location.href = `/Cart/LoadFromCard?cardNo=${encodeURIComponent(cardIdentifier)}`;
-                }, 1000);
-            };
-
+            // Handle successful scan
+            ndef.onreading = handleNfcRead;
 
         } catch (err) {
-            console.error('NFC Blocked Error:', err);
-
-            // Provide specific troubleshooting steps
-            statusEl.innerHTML = 'NFC Blocked<br><small>See console for details</small>';
-            statusEl.classList.add('error');
-
-            // Detailed error information
-            if (err.name === 'NotAllowedError') {
-                console.error('🔒 NFC Permission Denied');
-                console.error('Solution: Grant NFC permission in browser settings');
-            } else if (err.name === 'SecurityError') {
-                console.error('🔒 Security Error - Possible issues:');
-                console.error('1. Not HTTPS (current:', window.location.protocol, ')');
-                console.error('2. Invalid SSL certificate');
-                console.error('3. Page not served from secure origin');
-            }
-
-            // Auto-retry after 5 seconds
-            setTimeout(startNfcScan, 5000);
+            console.error('NFC Error:', err);
+            handleNfcError(err);
         }
     }
 
-    // Kiosk initialization function
-    function initializeKioskNFC() {
-        console.log('Initializing Kiosk NFC Mode');
+    // Handle NFC card read
+    function handleNfcRead(event) {
+        const { serialNumber, message } = event;
+        
+        updateStatus('detected', 'success');
 
-        // Start NFC automatically in kiosk mode
-        startNfcScan();
-
-        // Add periodic health check for kiosk mode
-        setInterval(() => {
-            if (!statusEl.classList.contains('reading') &&
-                !statusEl.classList.contains('success')) {
-                console.log('Kiosk NFC health check - restarting scan');
-                startNfcScan();
+        // Extract card identifier (prefer serial number)
+        let cardIdentifier = serialNumber;
+        
+        // Fallback to message payload if no serial number
+        if (!cardIdentifier && message.records.length > 0) {
+            try {
+                const decoder = new TextDecoder();
+                cardIdentifier = message.records
+                    .map(record => decoder.decode(record.data))
+                    .join('');
+            } catch (e) {
+                console.error('Error decoding NFC message:', e);
             }
-        }, 60000); // Check every minute
+        }
+
+        if (!cardIdentifier) {
+            updateStatus('error', 'error');
+            setTimeout(startNfcScan, 3000);
+            return;
+        }
+
+        console.log('✓ Card detected:', cardIdentifier);
+        updateStatus('loading', 'success');
+
+        // Navigate to cart
+        setTimeout(() => {
+            window.location.href = `/Cart/LoadFromCard?cardNo=${encodeURIComponent(cardIdentifier)}`;
+        }, 800);
     }
 
-    // Start when page loads in kiosk mode
-    document.addEventListener('DOMContentLoaded', function () {
-        console.log('Kiosk NFC Page Loaded');
-        initializeKioskNFC();
+    // Handle NFC errors
+    function handleNfcError(err) {
+        if (err.name === 'NotAllowedError') {
+            statusEl.innerHTML = 'NFC Permission Denied<br><small>Please grant NFC access</small>';
+        } else if (err.name === 'SecurityError') {
+            statusEl.innerHTML = 'Security Error<br><small>HTTPS required</small>';
+        } else {
+            statusEl.textContent = 'NFC Error - Retrying...';
+        }
+        
+        statusEl.classList.add('error');
+        console.error('NFC Error Details:', err);
+        
+        // Auto-retry after 5 seconds
+        setTimeout(startNfcScan, 5000);
+    }
+
+    // Update status display
+    function updateStatus(messageKey, className) {
+        const messages = {
+            ready: 'Ready to scan...',
+            requesting: 'Requesting NFC access...',
+            waiting: 'Hold your card near the reader...',
+            detected: 'Card detected!',
+            loading: 'Loading your cart...',
+            error: 'Unable to read card',
+            noSupport: 'NFC not supported on this device'
+        };
+
+        if (statusEl) {
+            statusEl.textContent = messages[messageKey] || messageKey;
+            statusEl.className = 'nfc-status';
+            if (className) statusEl.classList.add(className);
+        }
+    }
+
+    // Initialize NFC on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('NFC Page Initialized');
+        startNfcScan();
     });
 
+    // Cancel button
     cancelBtn?.addEventListener('click', () => {
         window.location.href = '/';
     });
-
-    startNfcScan();
 })();

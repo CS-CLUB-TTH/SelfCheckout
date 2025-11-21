@@ -1180,11 +1180,20 @@ body {
     animation: rotateGradient 30s linear infinite;
 }
 
-.nfc-icon img {
-    width: 220px;
-    height: 220px;
-    filter: drop-shadow(0 15px 40px rgba(0,0,0,0.5));
-    animation: pulse 2.4s ease-in-out infinite;
+.nfc-animation-container {
+    width: 100%;
+    max-width: 400px;
+    height: 400px;
+    margin: 0 auto 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.nfc-animation {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(0 15px 40px rgba(0,0,0,0.3));
 }
 
 .nfc-title {

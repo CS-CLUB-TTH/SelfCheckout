@@ -7,12 +7,27 @@
 
 <div class="nfc-screen">
     <div class="nfc-panel">
-        <div class="nfc-icon">
-            <img src="~/card-icon.svg" alt="NFC Card" />
+        <div class="nfc-animation-container">
+            <img src="~/nfc-tap-animation.svg" alt="Tap your NFC card" class="nfc-animation" />
         </div>
-        <h1 class="nfc-title">Tap Your NFC Card</h1>
-        <p class="nfc-instruction">Hold your card near the reader to continue</p>
-        <div class="nfc-status" id="nfcStatus">Waiting for card...</div>
+        <h1 class="nfc-title">Tap Your Card</h1>
+        <p class="nfc-instruction">Hold your NFC card near the reader</p>
+        <div class="nfc-status" id="nfcStatus">Ready to scan...</div>
         <button type="button" class="nfc-cancel-button" id="nfcCancel">Cancel</button>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        // NFC status messages
+        const statusMessages = {
+            ready: 'Ready to scan...',
+            requesting: 'Requesting NFC access...',
+            waiting: 'Hold your card near the reader...',
+            detected: 'Card detected!',
+            loading: 'Loading your cart...',
+            error: 'Unable to read card',
+            noSupport: 'NFC not supported on this device'
+        };
+    </script>
+}
