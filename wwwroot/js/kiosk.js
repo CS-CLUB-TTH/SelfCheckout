@@ -203,7 +203,6 @@ if ('serviceWorker' in navigator) {
                 // Extract card data
                 let cardData = serialNumber; // Primary identifier
                 let payloadText = '';
-                alert(cardData);
 
                 for (const record of message.records) {
                     try {
@@ -212,10 +211,14 @@ if ('serviceWorker' in navigator) {
                     } catch { }
                 }
 
+                // Use the card data (serial number or payload) as identifier
+                const cardIdentifier = cardData || payloadText;
+                
+                console.log('NFC Card detected:', cardIdentifier);
+
                 // Redirect to cart with card identifier
                 setTimeout(() => {
-                    // Use card serial as customer identifier
-                    window.location.href = `/Cart/LoadFromCard?cardNo=${encodeURIComponent(cardData || payloadText)}`;
+                    window.location.href = `/Cart/LoadFromCard?cardNo=${encodeURIComponent(cardIdentifier)}`;
                 }, 1000);
             };
 
