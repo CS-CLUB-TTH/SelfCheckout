@@ -1,20 +1,38 @@
 # Self Checkout Kiosk
 
-A modern self-checkout kiosk application built with ASP.NET Core Razor Pages, featuring NFC card integration and automated cart loading.
+A modern self-checkout kiosk application built with ASP.NET Core Razor Pages, featuring RFID/NFC card integration and automated cart loading.
 
 ## Features
 
-- **NFC Card Integration**: Customers can tap their NFC card to automatically load their cart
+- **RFID/NFC Card Integration**: Customers can tap their RFID or NFC card to automatically load their cart
 - **Dynamic Cart Loading**: Cart items are loaded from the database based on customer's pending orders
 - **Real-time Total Calculation**: Automatically calculates subtotal, tax (VAT), and total
 - **Modern UI**: Clean, responsive interface optimized for kiosk displays
 - **PWA Support**: Progressive Web App capabilities for offline support
+- **Zebra KC50 Compatible**: Designed for Zebra KC50 kiosk hardware
 
 ## Prerequisites
 
 - .NET 8.0 SDK
 - SQL Server database with the CUBES schema
-- NFC-compatible device/browser (for testing NFC functionality)
+- HF RFID/NFC-compatible device/browser (13.56 MHz cards)
+- Zebra KC50 kiosk (or compatible device)
+
+## RFID vs NFC - Important Information
+
+**🔍 Understanding Card Types:**
+
+This application currently uses the **Web NFC API** which reads **HF RFID cards** (13.56 MHz), including:
+- NFC tags (Type 1, 2, 3, 4, 5)
+- ISO 14443 cards (MIFARE, etc.)
+- ISO 15693 cards
+- All 13.56 MHz HF RFID cards
+
+**📚 For detailed information about RFID integration options:**
+- See [`docs/RFID_VS_NFC_GUIDE.md`](docs/RFID_VS_NFC_GUIDE.md) - Comprehensive guide explaining NFC vs RFID differences
+- See [`docs/RFID_IMPLEMENTATION_OPTIONS.md`](docs/RFID_IMPLEMENTATION_OPTIONS.md) - Quick reference for implementation options
+
+**If you need UHF RFID support** (860-960 MHz, long-range reading), see the implementation guides in the `docs` folder.
 
 ## Database Setup
 
@@ -89,12 +107,13 @@ The application requires a SQL Server database with the following:
 
 ## How It Works
 
-### NFC Flow
+### RFID/NFC Flow
 
 1. Customer navigates to the NFC page (`/Nfc`)
-2. Customer taps their NFC card on the reader
+2. Customer taps their RFID/NFC card on the reader
 3. The application:
-   - Reads the card's serial number or payload
+   - Reads the card's serial number or payload using Web NFC API
+   - Works with all HF RFID cards (13.56 MHz) including NFC, MIFARE, ISO 14443, ISO 15693
    - Sends the card number to the backend (`/Cart/LoadFromCard?cardNo=...`)
 4. Backend processes the request:
    - Looks up `cus_key` from `mst_customer_supplier` table using `card_no`
@@ -122,12 +141,16 @@ The application handles various error cases:
 - **Invalid Card**: Shows error message if no customer found
 - **Empty Cart**: Informs user if no pending items exist
 - **Database Errors**: Logs errors and displays user-friendly message
-- **NFC Not Supported**: Detects and informs if device doesn't support NFC
+- **RFID/NFC Not Supported**: Detects and informs if device doesn't support HF RFID/NFC
 
 ## Project Structure
 
 ```
 SelfCheckoutKiosk/
+├── docs/
+│   ├── RFID_VS_NFC_GUIDE.md           # Comprehensive RFID/NFC guide
+│   ├── RFID_IMPLEMENTATION_OPTIONS.md # Quick implementation reference
+│   └── FM_BRANDGUID_CORE.pdf          # Brand guidelines
 ├── Models/
 │   ├── BillDetail.cs           # Bill detail entity model
 │   └── MstCustomerSupplier.cs  # Customer model
@@ -172,16 +195,20 @@ GET /Cart/LoadFromCard?cardNo=ABC123XYZ
 - **Database**: Microsoft SQL Server
 - **ORM**: Dapper (micro-ORM)
 - **Frontend**: HTML5, CSS3, JavaScript
-- **NFC**: Web NFC API (NDEFReader)
+- **RFID/NFC**: Web NFC API (NDEFReader) - Reads HF RFID cards (13.56 MHz)
 - **Styling**: Bootstrap 5 + Custom CSS
+- **Hardware**: Zebra KC50 Kiosk (or compatible)
 
 ## Browser Requirements
 
-For NFC functionality:
+For RFID/NFC functionality:
 - Chrome 89+ (Android)
 - Chrome 100+ (Desktop with experimental flags)
 - Requires HTTPS connection
-- NFC permission must be granted
+- NFC/RFID permission must be granted
+- **Card Compatibility**: HF RFID cards (13.56 MHz) including NFC, MIFARE, ISO 14443, ISO 15693
+
+**Note**: For UHF RFID cards (860-960 MHz), see the [RFID Implementation Guide](docs/RFID_IMPLEMENTATION_OPTIONS.md).
 
 ## Development Notes
 
@@ -200,7 +227,7 @@ The `DatabaseService` provides two main methods:
 ### Logging
 
 The application uses structured logging (ILogger) to track:
-- NFC card reads
+- RFID/NFC card reads
 - Customer lookups
 - Cart loading operations
 - Errors and exceptions
@@ -217,12 +244,26 @@ Check application logs for troubleshooting.
 
 ## Troubleshooting
 
-### NFC Not Working
+### RFID/NFC Not Working
 
 1. Ensure HTTPS is enabled
-2. Check browser compatibility
-3. Grant NFC permissions in browser
+2. Check browser compatibility (Chrome 89+ on Android)
+3. Grant NFC/RFID permissions in browser
 4. Verify NFC is enabled on device
+5. **Verify card type**: Check if your cards are HF RFID (13.56 MHz)
+   - If you have UHF RFID cards, see [RFID Implementation Guide](docs/RFID_IMPLEMENTATION_OPTIONS.md)
+6. Test with NFC Tools app on Android to verify card compatibility
+
+### Card Not Detected
+
+1. **For HF RFID/NFC cards (current implementation)**:
+   - Hold card within 4cm of reader
+   - Ensure card is compatible with Web NFC API (13.56 MHz)
+   - Check browser console for errors
+   
+2. **For UHF RFID cards**:
+   - Current implementation does not support UHF cards
+   - See [RFID Implementation Guide](docs/RFID_IMPLEMENTATION_OPTIONS.md) for UHF support
 
 ### Database Connection Issues
 
@@ -237,6 +278,12 @@ Check application logs for troubleshooting.
 2. Check stored procedure `retrieve_bill_details2` exists and works
 3. Verify customer has unpaid orders in the system
 4. Check application logs for specific errors
+
+## Additional Documentation
+
+- **[RFID vs NFC Guide](docs/RFID_VS_NFC_GUIDE.md)**: Comprehensive guide explaining differences between NFC and RFID technologies
+- **[RFID Implementation Options](docs/RFID_IMPLEMENTATION_OPTIONS.md)**: Quick reference for different RFID implementation approaches
+- **Implementation Summary**: See `IMPLEMENTATION_SUMMARY.md` for detailed implementation notes
 
 ## License
 
