@@ -21,6 +21,7 @@ public class CartModel : PageModel
     public decimal Tax { get; set; }
     public decimal Total { get; set; }
     public string? ErrorMessage { get; set; }
+    public int? CustomerId { get; set; }
 
     public void OnGet()
     {
@@ -65,6 +66,14 @@ public class CartModel : PageModel
             Subtotal = CartItems.Sum(item => item.Amount);
             Tax = CartItems.Sum(item => item.VatAmt);
             Total = Subtotal + Tax; // Total = subtotal + tax
+
+            // Store cart information in TempData for payment processing
+            CustomerId = cusKey.Value;
+            TempData["CustomerId"] = CustomerId;
+            TempData["CartTotal"] = Total;
+            TempData["CartSubtotal"] = Subtotal;
+            TempData["CartTax"] = Tax;
+            TempData["CartItemCount"] = CartItems.Count;
 
             _logger.LogInformation("Loaded {Count} items for customer {CusKey}, Total: {Total}", 
                 CartItems.Count, cusKey, Total);

@@ -15,6 +15,30 @@
         </div>
         <h1 class="success-title">Payment Successful!</h1>
         <p class="success-message">Thank you for your purchase</p>
+        
+        @if (!string.IsNullOrEmpty(Model.TransactionId))
+        {
+            <div class="payment-details" style="margin-top: 30px; font-size: 18px; color: #666;">
+                @if (Model.Amount > 0)
+                {
+                    <p><strong>Amount:</strong> AED @Model.Amount.ToString("0.00")</p>
+                }
+                @if (!string.IsNullOrEmpty(Model.AuthorizationCode))
+                {
+                    <p><strong>Auth Code:</strong> @Model.AuthorizationCode</p>
+                }
+                @if (!string.IsNullOrEmpty(Model.ReferenceNumber))
+                {
+                    <p><strong>Reference:</strong> @Model.ReferenceNumber</p>
+                }
+                @if (!string.IsNullOrEmpty(Model.CardType) && !string.IsNullOrEmpty(Model.CardLast4))
+                {
+                    <p><strong>Card:</strong> @Model.CardType **** @Model.CardLast4</p>
+                }
+                <p style="font-size: 14px; margin-top: 10px;"><strong>Transaction ID:</strong> @Model.TransactionId</p>
+            </div>
+        }
+        
         <p class="success-message" style="font-size: 22px; margin-top: 30px;">
             Redirecting to feedback...
         </p>
