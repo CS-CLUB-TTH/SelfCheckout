@@ -11,7 +11,7 @@
             <img src="~/Graphic.svg" alt="Graphic" />
         </div>
         <h1>Your Cart</h1>
-        <p class="cart-instruction">Please review your items and proceed to payment</p>
+        @* <p class="cart-instruction">Please review your items and proceed to payment</p> *@
     </div>
     
     <div class="cart-content">
@@ -63,7 +63,9 @@
                 </div>
             </div>
         </div>
-        
+    </div>
+    
+    <div class="cart-footer">
         <div class="cart-summary-container">
             <div class="cart-summary">
                 <div class="summary-row">
@@ -80,10 +82,10 @@
                 </div>
             </div>
         </div>
-    </div>
-    
-    <div class="cart-footer">
-        <a href="/" class="btn-kiosk btn-cancel">Cancel</a>
-        <a href="/Payment" class="btn-kiosk btn-proceed">Proceed to Pay</a>
+
+        <div class="cart-footer-buttons">
+            <button class="btn-kiosk btn-cancel">Cancel Order</button>
+            <button class="btn-kiosk btn-proceed">Proceed to Payment</button>
+        </div>
     </div>
 </div>

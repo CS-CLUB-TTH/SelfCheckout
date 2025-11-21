@@ -1,0 +1,18 @@
+@page
+@model NfcModel
+@{
+    ViewData["Title"] = "Tap NFC Card";
+    Layout = "_KioskLayout";
+}
+
+<div class="nfc-screen">
+    <div class="nfc-panel">
+        <div class="nfc-icon">
+            <img src="~/card-icon.svg" alt="NFC Card" />
+        </div>
+        <h1 class="nfc-title">Tap Your NFC Card</h1>
+        <p class="nfc-instruction">Hold your card near the reader to continue</p>
+        <div class="nfc-status" id="nfcStatus">Waiting for card...</div>
+        <button type="button" class="nfc-cancel-button" id="nfcCancel">Cancel</button>
+    </div>
+</div>

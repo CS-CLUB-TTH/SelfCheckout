@@ -1,0 +1,40 @@
+{
+  "id": "/?fm-kiosk",
+  "name": "Farmers Market Self Checkout",
+  "short_name": "FM Kiosk",
+  "description": "Self checkout kiosk for Farmers Market produce purchases.",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "fullscreen",
+  "orientation": "portrait",
+  "display_override": ["window-controls-overlay", "standalone", "browser"],
+  "background_color": "#0b5d1e",
+  "theme_color": "#0b5d1e",
+  "categories": ["shopping", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "New Cart",
+      "short_name": "Cart",
+      "url": "/Cart"
+    },
+    {
+      "name": "Feedback",
+      "short_name": "Rate",
+      "url": "/Feedback"
+    }
+  ]
+}
