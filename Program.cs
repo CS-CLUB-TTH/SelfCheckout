@@ -17,7 +17,7 @@ builder.Services.AddHttpClient("MagnetiPaymentClient")
         client.DefaultRequestHeaders.Add("User-Agent", "SelfCheckoutKiosk/1.0");
     });
 
-// Register Magneti payment service
+// Register Magneti payment service (supports REST API and simulation modes)
 builder.Services.AddScoped<IMagnetiPaymentService, MagnetiPaymentService>();
 
 var app = builder.Build();
