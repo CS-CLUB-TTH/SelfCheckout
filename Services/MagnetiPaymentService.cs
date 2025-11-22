@@ -7,6 +7,7 @@ namespace SelfCheckoutKiosk.Services;
 /// <summary>
 /// Implementation of Magneti payment gateway integration
 /// This service handles communication with Magneti's API endpoints
+/// Supports both REST API mode and simulation mode for testing
 /// </summary>
 public class MagnetiPaymentService : IMagnetiPaymentService
 {
@@ -19,6 +20,9 @@ public class MagnetiPaymentService : IMagnetiPaymentService
     private const string ApiKeyKey = "Magneti:ApiKey";
     private const string MerchantIdKey = "Magneti:MerchantId";
     private const string TerminalIdKey = "Magneti:TerminalId";
+    private const string UseSimulationKey = "Magneti:UseSimulation";
+
+    private readonly bool _useSimulation;
 
     public MagnetiPaymentService(
         IConfiguration configuration,
@@ -29,23 +33,37 @@ public class MagnetiPaymentService : IMagnetiPaymentService
         _logger = logger;
         _httpClient = httpClientFactory.CreateClient("MagnetiPaymentClient");
 
+        // Check if simulation mode is enabled (default: true for safety)
+        _useSimulation = _configuration.GetValue<bool>(UseSimulationKey, true);
+
         // Configure HttpClient base address and headers
         var baseUrl = _configuration[ApiBaseUrlKey] ?? "https://sandbox.mgipayments.com/api";
         _httpClient.BaseAddress = new Uri(baseUrl);
         
         var apiKey = _configuration[ApiKeyKey];
-        if (string.IsNullOrWhiteSpace(apiKey))
+        if (!_useSimulation && string.IsNullOrWhiteSpace(apiKey))
         {
-            _logger.LogWarning("Magneti API key is not configured. Payment processing may fail.");
+            _logger.LogWarning("Magneti API key is not configured. Using simulation mode.");
+            _useSimulation = true;
+        }
+        else if (!_useSimulation)
+        {
+            _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
+        }
+
+        // Log which mode is active
+        if (_useSimulation)
+        {
+            _logger.LogInformation("Magneti payment service initialized in SIMULATION mode (no external API required)");
         }
         else
         {
-            _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
+            _logger.LogInformation("Magneti payment service initialized in REST API mode");
         }
     }
 
     /// <summary>
-    /// Process a payment through Magneti gateway
+    /// Process a payment through Magneti gateway (REST API or simulation)
     /// </summary>
     public async Task<MagnetiPaymentResponse> ProcessPaymentAsync(MagnetiPaymentRequest request)
     {
@@ -66,6 +84,56 @@ public class MagnetiPaymentService : IMagnetiPaymentService
                 return CreateErrorResponse("Amount must be greater than zero", "INVALID_AMOUNT");
             }
 
+            // Use simulation mode or REST API
+            if (_useSimulation)
+            {
+                return await ProcessPaymentSimulationAsync(request);
+            }
+
+            return await ProcessPaymentViaRestApiAsync(request);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing payment for transaction {TransactionId}", request.TransactionId);
+            return CreateErrorResponse("An unexpected error occurred", "PROCESSING_ERROR");
+        }
+    }
+
+    /// <summary>
+    /// Process payment via simulation (for testing without real API)
+    /// </summary>
+    private async Task<MagnetiPaymentResponse> ProcessPaymentSimulationAsync(MagnetiPaymentRequest request)
+    {
+        _logger.LogInformation("Processing payment in SIMULATION mode");
+
+        // Simulate processing delay
+        await Task.Delay(1500);
+
+        var timestamp = DateTime.UtcNow;
+        return new MagnetiPaymentResponse
+        {
+            Success = true,
+            Status = PaymentStatus.Approved,
+            TransactionId = request.TransactionId,
+            AuthorizationCode = $"SIM{timestamp:HHmmss}",
+            ReferenceNumber = $"REF{timestamp:yyyyMMddHHmmss}",
+            Amount = request.Amount,
+            Currency = request.Currency,
+            CardType = "VISA",
+            CardLast4 = "1234",
+            Timestamp = timestamp
+        };
+    }
+
+    /// <summary>
+    /// Process payment via REST API
+    /// </summary>
+    private async Task<MagnetiPaymentResponse> ProcessPaymentViaRestApiAsync(MagnetiPaymentRequest request)
+    {
+        _logger.LogInformation("Processing payment via REST API");
+
+        try
+        {
             // Build API request payload
             var payload = new
             {
@@ -119,11 +187,6 @@ public class MagnetiPaymentService : IMagnetiPaymentService
             _logger.LogError(ex, "HTTP error processing payment for transaction {TransactionId}", request.TransactionId);
             return CreateErrorResponse("Unable to connect to payment gateway", "CONNECTION_ERROR");
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error processing payment for transaction {TransactionId}", request.TransactionId);
-            return CreateErrorResponse("An unexpected error occurred", "PROCESSING_ERROR");
-        }
     }
 
     /// <summary>
@@ -134,6 +197,18 @@ public class MagnetiPaymentService : IMagnetiPaymentService
         try
         {
             _logger.LogInformation("Checking payment status for transaction {TransactionId}", transactionId);
+
+            if (_useSimulation)
+            {
+                // Simulation mode - return success
+                return new MagnetiPaymentResponse
+                {
+                    Success = true,
+                    Status = PaymentStatus.Approved,
+                    TransactionId = transactionId,
+                    Timestamp = DateTime.UtcNow
+                };
+            }
 
             var response = await _httpClient.GetAsync($"/v1/transactions/{transactionId}/status");
 
@@ -169,6 +244,18 @@ public class MagnetiPaymentService : IMagnetiPaymentService
             _logger.LogInformation(
                 "Processing refund for transaction {TransactionId}, Amount: {Amount}",
                 transactionId, amount?.ToString() ?? "Full");
+
+            if (_useSimulation)
+            {
+                // Simulation mode - return success
+                return new MagnetiPaymentResponse
+                {
+                    Success = true,
+                    Status = PaymentStatus.Approved,
+                    TransactionId = transactionId,
+                    Timestamp = DateTime.UtcNow
+                };
+            }
 
             var payload = new
             {
@@ -257,22 +344,5 @@ public class MagnetiPaymentService : IMagnetiPaymentService
             ErrorCode = errorCode,
             Timestamp = DateTime.UtcNow
         };
-    }
-
-    /// <summary>
-    /// Internal model for Magneti API response
-    /// </summary>
-    private class MagnetiApiResponse
-    {
-        public string? Status { get; set; }
-        public string? TransactionId { get; set; }
-        public string? AuthorizationCode { get; set; }
-        public string? ReferenceNumber { get; set; }
-        public string? Amount { get; set; }
-        public string? Currency { get; set; }
-        public string? ErrorMessage { get; set; }
-        public string? ErrorCode { get; set; }
-        public string? CardType { get; set; }
-        public string? CardLast4 { get; set; }
     }
 }
