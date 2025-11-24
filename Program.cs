@@ -20,6 +20,9 @@ builder.Services.AddHttpClient("MagnetiPaymentClient")
 // Register Magneti payment service (supports REST API and simulation modes)
 builder.Services.AddScoped<IMagnetiPaymentService, MagnetiPaymentService>();
 
+// Register receipt service for printing
+builder.Services.AddScoped<IReceiptService, ReceiptService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
