@@ -39,6 +39,11 @@
             </div>
         }
         
+        <div id="printStatus" style="margin-top: 20px; font-size: 16px; color: #28a745;">
+            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+            Printing receipt...
+        </div>
+        
         <p class="success-message" style="font-size: 22px; margin-top: 30px;">
             Redirecting to feedback...
         </p>
@@ -46,9 +51,62 @@
 </div>
 
 @section Scripts {
+    <!-- Include Zebra printer library -->
+    <script src="~/js/zebra-printer.js"></script>
+    
     <script>
+        // Receipt data from server
+        const receiptZpl = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ReceiptZpl ?? ""));
+        const receiptHtml = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ReceiptHtml ?? ""));
+        const receiptJson = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ReceiptJson ?? ""));
+        
+        // Auto-print receipt on page load
+        document.addEventListener('DOMContentLoaded', async function() {
+            const printStatus = document.getElementById('printStatus');
+            
+            try {
+                console.log('Starting automatic receipt printing...');
+                console.log('Receipt data available:', {
+                    hasZpl: !!receiptZpl,
+                    hasHtml: !!receiptHtml,
+                    hasJson: !!receiptJson
+                });
+                
+                if (receiptZpl && receiptHtml) {
+                    // Attempt automatic printing
+                    const result = await autoPrintReceipt(receiptZpl, receiptHtml);
+                    
+                    if (result.success) {
+                        printStatus.innerHTML = '<i class="bi bi-check-circle"></i> Receipt printed successfully!';
+                        printStatus.style.color = '#28a745';
+                        console.log('Receipt printed using method:', result.method);
+                    } else {
+                        printStatus.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Receipt printing attempted (check printer)';
+                        printStatus.style.color = '#ffc107';
+                        console.warn('Receipt printing had issues:', result);
+                    }
+                } else {
+                    printStatus.innerHTML = '<i class="bi bi-info-circle"></i> Receipt data not available';
+                    printStatus.style.color = '#6c757d';
+                    console.warn('Receipt data missing');
+                }
+            } catch (error) {
+                console.error('Error during auto-print:', error);
+                printStatus.innerHTML = '<i class="bi bi-exclamation-circle"></i> Unable to print receipt';
+                printStatus.style.color = '#dc3545';
+            }
+            
+            // Hide print status after 3 seconds
+            setTimeout(() => {
+                if (printStatus) {
+                    printStatus.style.display = 'none';
+                }
+            }, 3000);
+        });
+        
+        // Redirect to feedback after 5 seconds (increased from 3 to allow time for printing)
         setTimeout(() => {
             window.location.href = '/Feedback';
-        }, 3000);
+        }, 5000);
     </script>
 }
