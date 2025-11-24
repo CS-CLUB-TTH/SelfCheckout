@@ -22,43 +22,34 @@
         </div>
         <h1 class="payment-title">Payment Processing</h1>
         <div class="payment-amount">AED @Model.Amount.ToString("0.00")</div>
-        <p class="payment-instruction">Initiating payment with Magneti terminal...</p>
+        <p class="payment-instruction">Initiating payment with Magneti terminal (simulation)...</p>
         
         <div class="payment-terminal">
             <div class="terminal-placeholder">
                 <div class="spinner-border text-primary" role="status">
                     <span class="visually-hidden">Processing...</span>
                 </div>
-                <div class="mt-3">Magneti Payment Gateway</div>
-                <small style="font-size: 16px;">Connecting to terminal...</small>
+                <div class="mt-3">Magneti Payment Gateway (Simulation)</div>
+                <small style="font-size: 16px;">Ready to process.</small>
             </div>
         </div>
         
         <p class="payment-instruction" style="font-size: 20px; margin-top: 20px;" id="paymentStatus">
-            Processing payment...
+            Click the button to process the payment.
         </p>
         
-        <form method="post" asp-page-handler="ProcessPayment" id="paymentForm" style="display: none;">
-            <button type="submit" class="btn btn-primary">Process Payment</button>
+        <form method="post" asp-page-handler="ProcessPayment" id="paymentForm">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-primary btn-lg">Process Payment (Simulation)</button>
         </form>
     </div>
 </div>
 
 @section Scripts {
     <script>
-        // Auto-submit payment form after short delay to show UI
-        document.addEventListener('DOMContentLoaded', function() {
-            const statusEl = document.getElementById('paymentStatus');
-            const form = document.getElementById('paymentForm');
-            
-            // Update status
-            statusEl.textContent = 'Connecting to Magneti gateway...';
-            
-            // Auto-submit after 1 second
-            setTimeout(function() {
-                statusEl.textContent = 'Processing payment...';
-                form.submit();
-            }, 1000);
+        // Optional: update status on submit
+        document.getElementById('paymentForm').addEventListener('submit', function () {
+            document.getElementById('paymentStatus').textContent = 'Processing payment...';
         });
     </script>
 }

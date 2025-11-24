@@ -12,6 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="localization\" />
     <Folder Include="wwwroot\Magneti Documentation Images\" />
   </ItemGroup>
 

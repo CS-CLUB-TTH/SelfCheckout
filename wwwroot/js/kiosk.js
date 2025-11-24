@@ -106,12 +106,12 @@ function simulatePayment() {
 }
 
 // Auto-start payment on page load for payment screen
-if (window.location.pathname === '/Payment') {
-    // Reduced delay to 500ms for immediate feedback
-    setTimeout(() => {
-        simulatePayment();
-    }, 500);
-}
+//if (window.location.pathname === '/Payment') {
+//    // Reduced delay to 500ms for immediate feedback
+//    setTimeout(() => {
+//        simulatePayment();
+//    }, 500);
+//}
 
 // Register service worker for PWA installability/offline
 if ('serviceWorker' in navigator) {
