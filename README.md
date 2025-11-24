@@ -1,12 +1,13 @@
 # Self Checkout Kiosk
 
-A modern self-checkout kiosk application built with ASP.NET Core Razor Pages, featuring NFC card integration, automated cart loading, and Magneti payment gateway integration.
+A modern self-checkout kiosk application built with ASP.NET Core Razor Pages, featuring NFC card integration, automated cart loading, Magneti payment gateway integration, and **automatic receipt printing** for Zebra KC50 kiosks.
 
 ## Features
 
 - **NFC Card Integration**: Customers can tap their NFC card to automatically load their cart
 - **Dynamic Cart Loading**: Cart items are loaded from the database based on customer's pending orders
 - **Magneti Payment Integration**: Secure payment processing through Magneti payment gateway
+- **Automatic Receipt Printing**: Direct thermal receipt printing to Zebra printers (KC50 optimized)
 - **Real-time Total Calculation**: Automatically calculates subtotal, tax (VAT), and total
 - **Transaction Tracking**: Complete transaction logging with authorization codes and references
 - **Modern UI**: Clean, responsive interface optimized for kiosk displays
@@ -18,6 +19,7 @@ A modern self-checkout kiosk application built with ASP.NET Core Razor Pages, fe
 - SQL Server database with the CUBES schema
 - NFC-compatible device/browser (for testing NFC functionality)
 - Magneti payment gateway account (API credentials required)
+- **Zebra thermal printer** (for automatic receipt printing) - optional but recommended
 
 ## Database Setup
 
@@ -110,6 +112,22 @@ The application requires a SQL Server database with the following:
    }
    ```
 
+4. **Configure Receipt Printer (Optional)**
+
+   For Zebra KC50 kiosks with thermal printers:
+
+   - Connect Zebra printer via USB (recommended) or Bluetooth
+   - Printer will be automatically detected by Enterprise Browser
+   - No additional configuration needed for KC50
+   
+   For desktop/testing with Zebra Browser Print:
+   
+   - Download Zebra Browser Print: https://www.zebra.com/us/en/support-downloads/software/printer-software/browser-print.html
+   - Install and run the Browser Print service
+   - Set Zebra printer as default printer
+   
+   **Note:** If no Zebra printer is available, receipts will use the browser print dialog as fallback.
+
 ## Running the Application
 
 1. **Restore Dependencies**:
@@ -198,7 +216,34 @@ The application requires a SQL Server database with the following:
 4. **Success Display:**
    - Shows transaction ID, authorization code
    - Displays reference number and card details (masked)
-   - Auto-redirects to feedback after 3 seconds
+   - **Automatically prints receipt** to connected Zebra printer
+   - Auto-redirects to feedback after 5 seconds
+
+### Receipt Printing Flow
+
+1. **Payment Success:**
+   - Receipt data generated with transaction details
+   - Includes all cart items, totals, payment info
+
+2. **Automatic Printing:**
+   - JavaScript detects available printer API:
+     - **Zebra Enterprise Browser API** (KC50 native) → Direct print
+     - **Zebra Browser Print API** (external) → Direct print
+     - **Browser Print Dialog** (fallback) → User selects printer
+   
+3. **Receipt Format:**
+   - **ZPL** for Zebra thermal printers (fast, optimized)
+   - **HTML** for browser printing (fallback)
+   - **Plain Text** for compatibility
+
+4. **Receipt Content:**
+   - Store name and transaction info
+   - Complete list of purchased items
+   - Subtotal, tax, and total
+   - Payment details (card type, last 4 digits)
+   - Authorization code and reference number
+
+**See [docs/RECEIPT_PRINTING_GUIDE.md](docs/RECEIPT_PRINTING_GUIDE.md) for detailed printing documentation.**
 
 ### Cart Display
 
