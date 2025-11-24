@@ -11,6 +11,11 @@ public class ReceiptService : IReceiptService
     private readonly ILogger<ReceiptService> _logger;
     private readonly IConfiguration _configuration;
 
+    // Configuration constants
+    private const int DefaultPrintWidth = 400; // 400 dots ≈ 58mm thermal paper
+    private const int MaxDescriptionLength = 25;
+    private const int TruncatedDescriptionLength = 22;
+
     public ReceiptService(ILogger<ReceiptService> logger, IConfiguration configuration)
     {
         _logger = logger;
@@ -30,8 +35,9 @@ public class ReceiptService : IReceiptService
             // Start ZPL script
             zpl.AppendLine("^XA"); // Start format
 
-            // Set label width and orientation
-            zpl.AppendLine("^PW400"); // Print width (400 dots = ~2.8 inches for 58mm paper)
+            // Set label width and orientation - configurable via appsettings or use default
+            var printWidth = _configuration.GetValue("Receipt:PrinterWidth", DefaultPrintWidth);
+            zpl.AppendLine($"^PW{printWidth}"); // Print width (400 dots = ~2.8 inches for 58mm paper)
             zpl.AppendLine("^LL0"); // Auto-calculate label length
 
             var yPosition = 10; // Starting Y position
@@ -77,7 +83,9 @@ public class ReceiptService : IReceiptService
             foreach (var item in receipt.Items)
             {
                 // Item description (may wrap if too long)
-                var desc = item.Description.Length > 25 ? item.Description.Substring(0, 22) + "..." : item.Description;
+                var desc = item.Description.Length > MaxDescriptionLength 
+                    ? item.Description.Substring(0, TruncatedDescriptionLength) + "..." 
+                    : item.Description;
                 zpl.AppendLine($"^FO10,{yPosition}^A0N,18,18^FD{desc}^FS");
                 
                 // Quantity

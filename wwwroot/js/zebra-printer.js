@@ -1,6 +1,10 @@
 // Zebra Printer Integration for Self Checkout Kiosk
 // Supports automatic receipt printing using Zebra Browser Print API
 
+// Configuration constants
+const PRINT_WINDOW_DELAY = 100; // ms to wait before printing in popup window
+const PRINT_WINDOW_CLOSE_DELAY = 100; // ms to wait before closing popup after print
+
 class ZebraPrinter {
     constructor() {
         this.defaultPrinter = null;
@@ -175,8 +179,8 @@ class ZebraPrinter {
                 setTimeout(() => {
                     printWindow.print();
                     // Close after print dialog
-                    setTimeout(() => printWindow.close(), 100);
-                }, 100);
+                    setTimeout(() => printWindow.close(), PRINT_WINDOW_CLOSE_DELAY);
+                }, PRINT_WINDOW_DELAY);
             };
         } else {
             console.error('Failed to open print window - popup blocked?');

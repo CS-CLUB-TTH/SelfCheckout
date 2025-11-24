@@ -55,6 +55,10 @@
     <script src="~/js/zebra-printer.js"></script>
     
     <script>
+        // Configuration constants
+        const PRINT_STATUS_HIDE_DELAY = 3000; // ms to hide print status message
+        const FEEDBACK_REDIRECT_DELAY = 5000; // ms before redirecting to feedback
+        
         // Receipt data from server
         const receiptZpl = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ReceiptZpl ?? ""));
         const receiptHtml = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ReceiptHtml ?? ""));
@@ -96,17 +100,17 @@
                 printStatus.style.color = '#dc3545';
             }
             
-            // Hide print status after 3 seconds
+            // Hide print status after delay
             setTimeout(() => {
                 if (printStatus) {
                     printStatus.style.display = 'none';
                 }
-            }, 3000);
+            }, PRINT_STATUS_HIDE_DELAY);
         });
         
-        // Redirect to feedback after 5 seconds (increased from 3 to allow time for printing)
+        // Redirect to feedback after delay
         setTimeout(() => {
             window.location.href = '/Feedback';
-        }, 5000);
+        }, FEEDBACK_REDIRECT_DELAY);
     </script>
 }

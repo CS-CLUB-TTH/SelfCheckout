@@ -32,16 +32,8 @@ public class SuccessModel : PageModel
         // Retrieve payment details from TempData
         TransactionId = TempData["PaymentTransactionId"] as string;
         
-        // Handle Amount stored as string
-        if (TempData["PaymentAmount"] is string amountStr 
-            && decimal.TryParse(amountStr, NumberStyles.Number, CultureInfo.InvariantCulture, out var amount))
-        {
-            Amount = amount;
-        }
-        else
-        {
-            Amount = TempData["PaymentAmount"] as decimal? ?? 0;
-        }
+        // Parse amount
+        Amount = TryParseDecimalFromTempData("PaymentAmount");
         
         AuthorizationCode = TempData["PaymentAuthCode"] as string;
         ReferenceNumber = TempData["PaymentReferenceNumber"] as string;
@@ -49,21 +41,9 @@ public class SuccessModel : PageModel
         CardLast4 = TempData["PaymentCardLast4"] as string;
 
         // Retrieve cart items and totals for receipt
-        var subtotal = 0m;
-        var tax = 0m;
+        var subtotal = TryParseDecimalFromTempData("CartSubtotal");
+        var tax = TryParseDecimalFromTempData("CartTax");
         var items = new List<ReceiptItem>();
-
-        if (TempData["CartSubtotal"] is string subtotalStr 
-            && decimal.TryParse(subtotalStr, NumberStyles.Number, CultureInfo.InvariantCulture, out var sub))
-        {
-            subtotal = sub;
-        }
-
-        if (TempData["CartTax"] is string taxStr 
-            && decimal.TryParse(taxStr, NumberStyles.Number, CultureInfo.InvariantCulture, out var t))
-        {
-            tax = t;
-        }
 
         // Try to retrieve cart items from TempData
         if (TempData["CartItems"] is string cartItemsJson)
@@ -113,5 +93,31 @@ public class SuccessModel : PageModel
         {
             _logger.LogError(ex, "Failed to generate receipt for transaction {TransactionId}", TransactionId);
         }
+    }
+
+    /// <summary>
+    /// Helper method to parse decimal from TempData, handling both string and decimal types
+    /// </summary>
+    private decimal TryParseDecimalFromTempData(string key)
+    {
+        if (!TempData.TryGetValue(key, out var obj) || obj is null)
+        {
+            return 0m;
+        }
+
+        // Values are stored as invariant strings
+        if (obj is string s 
+            && decimal.TryParse(s, NumberStyles.Number, CultureInfo.InvariantCulture, out var parsed))
+        {
+            return parsed;
+        }
+
+        // Fallback: if someone placed a decimal directly into TempData
+        if (obj is decimal d)
+        {
+            return d;
+        }
+
+        return 0m;
     }
 }
