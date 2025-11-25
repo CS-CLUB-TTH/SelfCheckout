@@ -116,10 +116,13 @@ public class MainActivity extends Activity {
         }
         
         // Create PendingIntent for foreground dispatch
+        // FLAG_MUTABLE is required for NFC foreground dispatch because the system
+        // needs to add NFC tag extras to the intent when a tag is detected.
+        // FLAG_IMMUTABLE prevents the NFC system from adding the tag data, breaking NFC reads.
         Intent intent = new Intent(this, getClass());
         intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
         nfcPendingIntent = PendingIntent.getActivity(
-            this, 0, intent, PendingIntent.FLAG_IMMUTABLE
+            this, 0, intent, PendingIntent.FLAG_MUTABLE
         );
         
         // Setup intent filters for NFC discovery
@@ -178,6 +181,9 @@ public class MainActivity extends Activity {
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
+        
+        // Update the activity's intent so getIntent() returns the latest
+        setIntent(intent);
         
         String action = intent.getAction();
         if (NfcAdapter.ACTION_TAG_DISCOVERED.equals(action) ||
