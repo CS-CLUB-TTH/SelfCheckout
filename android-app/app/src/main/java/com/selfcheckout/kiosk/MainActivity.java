@@ -4,15 +4,19 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Color;
+import android.hardware.usb.UsbDevice;
+import android.hardware.usb.UsbManager;
 import android.nfc.NfcAdapter;
 import android.nfc.Tag;
 import android.nfc.tech.MifareClassic;
 import android.nfc.tech.MifareUltralight;
 import android.os.Bundle;
+import android.os.Build;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
@@ -49,13 +53,18 @@ import android.widget.Toast;
 public class MainActivity extends Activity {
     
     private static final String TAG = "SelfCheckoutKiosk";
-    
+    // USB Permission action
+    private static final String ACTION_USB_PERMISSION = "com.selfcheckout.kiosk.USB_PERMISSION";
+
+    // USB Vendor IDs for printers
+    private static final int EPSON_VENDOR_ID = 0x04B8;  // 1208
+    private static final int ZEBRA_VENDOR_ID = 0x0A5F;  // 2655
     // ============================================================
     // CONFIGURATION
     // Change WEB_APP_URL to your ASP.NET Core web app URL
     // Format: https://IP_ADDRESS:PORT/ or http://IP_ADDRESS:PORT/
     // ============================================================
-    private static final String WEB_APP_URL = "https://pdtschoolcanteen.cubes-intl.com";
+    private static final String WEB_APP_URL = "http://192.168.1.130:61439";
     
     // Enable/disable kiosk lock (screen pinning)
     // Set to true to prevent users from exiting the app
@@ -64,7 +73,10 @@ public class MainActivity extends Activity {
     
     private WebView webView;
     private PrinterManager printerManager;
-    
+
+    // USB Permission components
+    private UsbManager usbManager;
+    private PendingIntent usbPermissionIntent;
     // NFC components
     private NfcAdapter nfcAdapter;
     private PendingIntent nfcPendingIntent;
@@ -79,10 +91,16 @@ public class MainActivity extends Activity {
         
         // Enable fullscreen kiosk mode
         setupKioskMode();
-        
+
+        // Initialize USB permission handling for printer
+        initializeUsbPermission();
+
         // Initialize printer manager
         printerManager = new PrinterManager(this);
-        
+
+        // Request USB permission for printer if needed
+        requestPrinterPermission();
+
         // Initialize NFC adapter
         initializeNfc();
         
@@ -99,7 +117,77 @@ public class MainActivity extends Activity {
         Log.i(TAG, "Loading web app: " + WEB_APP_URL);
         webView.loadUrl(WEB_APP_URL);
     }
-    
+
+    /**
+     * BroadcastReceiver for USB permission result
+     */
+    private final BroadcastReceiver usbPermissionReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (ACTION_USB_PERMISSION.equals(action)) {
+                synchronized (this) {
+                    UsbDevice device = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+
+                    if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
+                        if (device != null) {
+                            Log.i(TAG, "USB permission granted for device: " + device.getDeviceName());
+                            // Reinitialize printer manager now that we have permission
+                            printerManager.initialize();
+                        }
+                    } else {
+                        Log.w(TAG, "USB permission denied for device: " + (device != null ? device.getDeviceName() : "unknown"));
+                    }
+                }
+            }
+        }
+    };
+
+    /**
+     * Initialize USB permission handling
+     */
+    private void initializeUsbPermission() {
+        usbManager = (UsbManager) getSystemService(Context.USB_SERVICE);
+
+        // Create PendingIntent for USB permission request
+        // FLAG_MUTABLE is required so the system can add the USB device to the intent
+        Intent intent = new Intent(ACTION_USB_PERMISSION);
+        intent.setPackage(getPackageName());
+        usbPermissionIntent = PendingIntent.getBroadcast(
+                this, 0, intent, PendingIntent.FLAG_MUTABLE
+        );
+
+        // Register the USB permission receiver
+        IntentFilter filter = new IntentFilter(ACTION_USB_PERMISSION);
+        registerReceiver(usbPermissionReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+
+        Log.i(TAG, "USB permission handling initialized");
+    }
+
+    /**
+     * Request USB permission for connected printer
+     */
+    private void requestPrinterPermission() {
+        if (usbManager == null) {
+            Log.w(TAG, "USB Manager not available");
+            return;
+        }
+
+        // Find printer and request permission
+        for (UsbDevice device : usbManager.getDeviceList().values()) {
+            int vendorId = device.getVendorId();
+            // Check for EPSON (0x04B8 = 1208) or Zebra (0x0A5F = 2655) printer
+            if (vendorId == 1208 || vendorId == 2655) {
+                if (!usbManager.hasPermission(device)) {
+                    Log.i(TAG, "Requesting USB permission for printer: " + device.getDeviceName());
+                    usbManager.requestPermission(device, usbPermissionIntent);
+                } else {
+                    Log.i(TAG, "USB permission already granted for printer: " + device.getDeviceName());
+                }
+            }
+        }
+    }
+
     /**
      * Initialize NFC adapter and foreground dispatch
      */
@@ -319,20 +407,20 @@ public class MainActivity extends Activity {
         // Enable zoom controls (optional, can disable for kiosk)
         settings.setBuiltInZoomControls(false);
         settings.setDisplayZoomControls(false);
-        
+
         // Set cache mode
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
-        
+
         // Enable mixed content (if needed for local resources)
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
-        
+
         // Set user agent to identify as kiosk app
         String userAgent = settings.getUserAgentString();
         settings.setUserAgentString(userAgent + " SelfCheckoutKiosk/1.0");
-        
+
         // Set background color
         webView.setBackgroundColor(Color.WHITE);
-        
+
         // Configure WebView client
         webView.setWebViewClient(new WebViewClient() {
             @Override
@@ -340,58 +428,58 @@ public class MainActivity extends Activity {
                 // Keep all navigation within the WebView
                 return false;
             }
-            
+
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 Log.i(TAG, "Page loaded: " + url);
             }
-            
+
             @Override
             public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
                 Log.e(TAG, "WebView error: " + description + " for " + failingUrl);
             }
         });
-        
+
         // Configure Chrome client for console logging
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
-                Log.d(TAG, "JS Console: " + consoleMessage.message() 
-                    + " -- From line " + consoleMessage.lineNumber() 
+                Log.d(TAG, "JS Console: " + consoleMessage.message()
+                    + " -- From line " + consoleMessage.lineNumber()
                     + " of " + consoleMessage.sourceId());
                 return true;
             }
         });
     }
-    
+
     /**
      * JavaScript interface for native printing and NFC
      * Exposes methods to the web application via window.Android
      */
     public class PrintInterface {
-        
+
         /**
          * Print receipt data to the connected printer (EPSON or Zebra)
          * Called from JavaScript: window.Android.printReceipt(printData)
-         * 
+         *
          * @param printData ESC/POS commands for EPSON or ZPL commands for Zebra
          */
         @JavascriptInterface
         public void printReceipt(final String printData) {
             Log.i(TAG, "printReceipt called from JavaScript");
-            
+
             if (printData == null || printData.isEmpty()) {
                 Log.w(TAG, "Empty print data received");
                 showToast("No print data received");
                 return;
             }
-            
+
             // Print on background thread
             new Thread(() -> {
                 try {
                     boolean success = printerManager.printReceipt(printData);
-                    
+
                     if (success) {
                         Log.i(TAG, "Print job sent successfully");
                         showToast("Receipt printed");
@@ -405,11 +493,11 @@ public class MainActivity extends Activity {
                 }
             }).start();
         }
-        
+
         /**
          * Check if a printer is available
          * Called from JavaScript: window.Android.isPrinterAvailable()
-         * 
+         *
          * @return true if printer is connected
          */
         @JavascriptInterface
@@ -418,11 +506,11 @@ public class MainActivity extends Activity {
             Log.i(TAG, "isPrinterAvailable: " + available);
             return available;
         }
-        
+
         /**
          * Get printer status as JSON
          * Called from JavaScript: window.Android.getPrinterStatus()
-         * 
+         *
          * @return JSON string with printer status including printer type
          */
         @JavascriptInterface
@@ -431,11 +519,11 @@ public class MainActivity extends Activity {
             Log.i(TAG, "getPrinterStatus: " + status);
             return status;
         }
-        
+
         /**
          * Get the type of connected printer
          * Called from JavaScript: window.Android.getPrinterType()
-         * 
+         *
          * @return "EPSON", "ZEBRA", or "UNKNOWN"
          */
         @JavascriptInterface
@@ -444,11 +532,11 @@ public class MainActivity extends Activity {
             Log.i(TAG, "getPrinterType: " + type);
             return type;
         }
-        
+
         /**
          * Check if NFC is available on device
          * Called from JavaScript: window.Android.isNfcAvailable()
-         * 
+         *
          * @return true if NFC hardware is available
          */
         @JavascriptInterface
@@ -457,11 +545,11 @@ public class MainActivity extends Activity {
             Log.i(TAG, "isNfcAvailable: " + available);
             return available;
         }
-        
+
         /**
          * Check if NFC is enabled
          * Called from JavaScript: window.Android.isNfcEnabled()
-         * 
+         *
          * @return true if NFC is enabled
          */
         @JavascriptInterface
@@ -470,31 +558,31 @@ public class MainActivity extends Activity {
             Log.i(TAG, "isNfcEnabled: " + enabled);
             return enabled;
         }
-        
+
         /**
          * Start NFC scanning
          * Called from JavaScript: window.Android.startNfcScan()
-         * 
+         *
          * @return true if NFC scan started successfully
          */
         @JavascriptInterface
         public boolean startNfcScan() {
             Log.i(TAG, "startNfcScan called from JavaScript");
-            
+
             if (nfcAdapter == null) {
                 Log.w(TAG, "NFC not available");
                 return false;
             }
-            
+
             if (!nfcAdapter.isEnabled()) {
                 Log.w(TAG, "NFC is disabled");
                 return false;
             }
-            
+
             runOnUiThread(() -> enableNfcForegroundDispatch());
             return true;
         }
-        
+
         /**
          * Stop NFC scanning
          * Called from JavaScript: window.Android.stopNfcScan()
@@ -504,7 +592,7 @@ public class MainActivity extends Activity {
             Log.i(TAG, "stopNfcScan called from JavaScript");
             runOnUiThread(() -> disableNfcForegroundDispatch());
         }
-        
+
         /**
          * Show toast message on UI thread
          */
@@ -512,7 +600,7 @@ public class MainActivity extends Activity {
             runOnUiThread(() -> Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show());
         }
     }
-    
+
     /**
      * Handle back button - prevent exiting kiosk
      */
@@ -523,7 +611,7 @@ public class MainActivity extends Activity {
         }
         // Don't call super.onBackPressed() to prevent exiting
     }
-    
+
     /**
      * Restore immersive mode when window focus changes
      */
@@ -543,30 +631,39 @@ public class MainActivity extends Activity {
             );
         }
     }
-    
+
     @Override
     protected void onResume() {
         super.onResume();
         // Reconnect printer if needed
         printerManager.initialize();
-        
+
+        // Request USB permission for printer if needed (in case a new printer is connected)
+        requestPrinterPermission();
+
         // Always enable NFC foreground dispatch when activity is in foreground
         // This ensures NFC reads work on the first tap
         if (nfcAdapter != null && nfcAdapter.isEnabled()) {
             enableNfcForegroundDispatch();
         }
     }
-    
+
     @Override
     protected void onPause() {
         super.onPause();
         // Disable NFC foreground dispatch to release resources
         disableNfcForegroundDispatch();
     }
-    
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        // Unregister USB permission receiver
+        try {
+            unregisterReceiver(usbPermissionReceiver);
+        } catch (Exception e) {
+            Log.e(TAG, "Error unregistering USB receiver: " + e.getMessage());
+        }
         printerManager.disconnect();
         if (webView != null) {
             webView.destroy();
