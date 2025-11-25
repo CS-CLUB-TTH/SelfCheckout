@@ -9,14 +9,19 @@ namespace SelfCheckoutKiosk.Pages;
 public class PaymentModel : PageModel
 {
     private readonly IMagnetiPaymentService _paymentService;
+    private readonly IDatabaseService _databaseService;
     private readonly ILogger<PaymentModel> _logger;
 
     // Configuration constants
     private const int TransactionIdGuidLength = 8;
 
-    public PaymentModel(IMagnetiPaymentService paymentService, ILogger<PaymentModel> logger)
+    public PaymentModel(
+        IMagnetiPaymentService paymentService, 
+        IDatabaseService databaseService,
+        ILogger<PaymentModel> logger)
     {
         _paymentService = paymentService;
+        _databaseService = databaseService;
         _logger = logger;
     }
 
@@ -100,6 +105,35 @@ public class PaymentModel : PageModel
                     "Payment approved - TransactionId: {TransactionId}, AuthCode: {AuthCode}",
                     response.TransactionId, response.AuthorizationCode);
 
+                // Update the database with payment completion
+                var billHdrKey = TempData["BillHdrKey"] as int?;
+                if (billHdrKey.HasValue)
+                {
+                    var completionResult = await _databaseService.CompletePaymentAsync(
+                        billHdrKey.Value,
+                        paymentTypeId: 2, // Credit Card
+                        creditCardTypeId: GetCreditCardTypeId(response.CardType),
+                        authorizationCode: response.AuthorizationCode,
+                        referenceNumber: response.ReferenceNumber);
+
+                    if (!completionResult.IsSuccess)
+                    {
+                        _logger.LogWarning(
+                            "Payment database update failed - BillHdrKey: {BillHdrKey}, Message: {Message}",
+                            billHdrKey.Value, completionResult.Message);
+                    }
+                    else
+                    {
+                        _logger.LogInformation(
+                            "Payment database update successful - BillHdrKey: {BillHdrKey}, Amount: {Amount}",
+                            billHdrKey.Value, completionResult.BillAmt);
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning("No BillHdrKey found in TempData, skipping database update");
+                }
+
                 return RedirectToPage("/Success");
             }
             else
@@ -173,5 +207,27 @@ public class PaymentModel : PageModel
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// Maps card type string to credit card type ID in the database
+    /// </summary>
+    private static int? GetCreditCardTypeId(string? cardType)
+    {
+        if (string.IsNullOrEmpty(cardType))
+            return null;
+
+        // Map common card types to IDs (these should match your mst_credit_card_type table)
+        return cardType.ToUpperInvariant() switch
+        {
+            "VISA" => 1,
+            "MASTERCARD" or "MC" => 2,
+            "AMEX" or "AMERICAN EXPRESS" => 3,
+            "DISCOVER" => 4,
+            "DINERS" or "DINERS CLUB" => 5,
+            "JCB" => 6,
+            "UNIONPAY" => 7,
+            _ => null
+        };
     }
 }

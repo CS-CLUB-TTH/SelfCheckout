@@ -316,4 +316,146 @@ public class ReceiptService : IReceiptService
             throw;
         }
     }
+
+    /// <summary>
+    /// Generates ESC/POS commands for thermal receipt printing
+    /// Compatible with most POS thermal printers via RawBT or similar services
+    /// </summary>
+    public string GenerateEscPosReceipt(Receipt receipt)
+    {
+        try
+        {
+            var escPos = new StringBuilder();
+
+            // ESC/POS Constants
+            const char ESC = '\x1B';
+            const char GS = '\x1D';
+
+            // Initialize printer
+            escPos.Append(ESC);
+            escPos.Append('@');
+
+            // Set character code table (PC437)
+            escPos.Append(ESC);
+            escPos.Append('t');
+            escPos.Append('\x00');
+
+            // Center alignment for header
+            escPos.Append(ESC);
+            escPos.Append('a');
+            escPos.Append('\x01');
+
+            // Bold on + Double height for store name
+            escPos.Append(ESC);
+            escPos.Append('E');
+            escPos.Append('\x01');
+            escPos.Append(GS);
+            escPos.Append('!');
+            escPos.Append('\x10'); // Double height
+
+            escPos.AppendLine(receipt.StoreName);
+
+            // Reset text size
+            escPos.Append(GS);
+            escPos.Append('!');
+            escPos.Append('\x00');
+
+            // Bold off
+            escPos.Append(ESC);
+            escPos.Append('E');
+            escPos.Append('\x00');
+
+            // Separator line
+            escPos.AppendLine("================================");
+
+            // Left alignment for content
+            escPos.Append(ESC);
+            escPos.Append('a');
+            escPos.Append('\x00');
+
+            // Transaction info
+            escPos.AppendLine($"Date: {receipt.TransactionDate:dd/MM/yyyy HH:mm:ss}");
+            escPos.AppendLine($"Transaction: {receipt.TransactionId}");
+
+            if (receipt.CustomerId.HasValue)
+            {
+                escPos.AppendLine($"Customer: {receipt.CustomerId}");
+            }
+
+            escPos.AppendLine("--------------------------------");
+            escPos.AppendLine($"{"Item",-20} {"Qty",5} {"Amt",8}");
+            escPos.AppendLine("--------------------------------");
+
+            // Items
+            foreach (var item in receipt.Items)
+            {
+                var desc = item.Description.Length > 20 
+                    ? item.Description.Substring(0, 17) + "..." 
+                    : item.Description;
+                escPos.AppendLine($"{desc,-20} {item.Quantity,5:0.##} {item.Amount,8:0.00}");
+            }
+
+            escPos.AppendLine("--------------------------------");
+
+            // Totals
+            escPos.AppendLine($"{"Subtotal:",-20} {receipt.Subtotal,13:0.00}");
+            escPos.AppendLine($"{"Tax (VAT):",-20} {receipt.Tax,13:0.00}");
+
+            // Bold on for total
+            escPos.Append(ESC);
+            escPos.Append('E');
+            escPos.Append('\x01');
+
+            escPos.AppendLine("================================");
+            escPos.AppendLine($"{"TOTAL:",-20} {receipt.Total,10:0.00} {receipt.Currency}");
+            escPos.AppendLine("================================");
+
+            // Bold off
+            escPos.Append(ESC);
+            escPos.Append('E');
+            escPos.Append('\x00');
+
+            // Payment details
+            if (!string.IsNullOrEmpty(receipt.CardType) && !string.IsNullOrEmpty(receipt.CardLast4))
+            {
+                escPos.AppendLine($"Card: {receipt.CardType} ****{receipt.CardLast4}");
+            }
+            if (!string.IsNullOrEmpty(receipt.AuthorizationCode))
+            {
+                escPos.AppendLine($"Auth Code: {receipt.AuthorizationCode}");
+            }
+            if (!string.IsNullOrEmpty(receipt.ReferenceNumber))
+            {
+                escPos.AppendLine($"Reference: {receipt.ReferenceNumber}");
+            }
+
+            escPos.AppendLine();
+
+            // Center alignment for footer
+            escPos.Append(ESC);
+            escPos.Append('a');
+            escPos.Append('\x01');
+
+            escPos.AppendLine("Thank you for shopping!");
+            escPos.AppendLine();
+
+            // Feed paper and cut
+            escPos.AppendLine();
+            escPos.AppendLine();
+            escPos.AppendLine();
+
+            // Partial cut
+            escPos.Append(GS);
+            escPos.Append('V');
+            escPos.Append('\x01');
+
+            _logger.LogInformation("Generated ESC/POS receipt for transaction {TransactionId}", receipt.TransactionId);
+            return escPos.ToString();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating ESC/POS receipt for transaction {TransactionId}", receipt.TransactionId);
+            throw;
+        }
+    }
 }

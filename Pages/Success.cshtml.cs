@@ -23,9 +23,11 @@ public class SuccessModel : PageModel
     public string? ReferenceNumber { get; set; }
     public string? CardType { get; set; }
     public string? CardLast4 { get; set; }
+    
+    /// <summary>
+    /// ZPL receipt data for Android Native Bridge printing
+    /// </summary>
     public string? ReceiptZpl { get; set; }
-    public string? ReceiptHtml { get; set; }
-    public string? ReceiptJson { get; set; }
 
     public void OnGet()
     {
@@ -82,16 +84,14 @@ public class SuccessModel : PageModel
 
         try
         {
-            // Generate receipt in multiple formats
+            // Generate ZPL receipt for Android Native Bridge printing
             ReceiptZpl = _receiptService.GenerateZplReceipt(receipt);
-            ReceiptHtml = _receiptService.GenerateHtmlReceipt(receipt);
-            ReceiptJson = JsonSerializer.Serialize(receipt);
 
-            _logger.LogInformation("Receipt generated successfully for transaction {TransactionId}", TransactionId);
+            _logger.LogInformation("ZPL receipt generated for transaction {TransactionId}", TransactionId);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to generate receipt for transaction {TransactionId}", TransactionId);
+            _logger.LogError(ex, "Failed to generate ZPL receipt for transaction {TransactionId}", TransactionId);
         }
     }
 

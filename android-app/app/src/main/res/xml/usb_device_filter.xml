@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- USB device filter for Zebra printers -->
+<resources>
+    <!-- Zebra USB Printers - Vendor ID: 0x0A5F -->
+    <usb-device vendor-id="2655" />
+</resources>

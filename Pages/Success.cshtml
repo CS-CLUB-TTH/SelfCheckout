@@ -51,7 +51,7 @@
 </div>
 
 @section Scripts {
-    <!-- Include Zebra printer library -->
+    <!-- Zebra Printer Integration - Android Native Bridge -->
     <script src="~/js/zebra-printer.js"></script>
     
     <script>
@@ -59,44 +59,46 @@
         const PRINT_STATUS_HIDE_DELAY = 3000; // ms to hide print status message
         const FEEDBACK_REDIRECT_DELAY = 5000; // ms before redirecting to feedback
         
-        // Receipt data from server
+        // Receipt ZPL data from server
         const receiptZpl = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ReceiptZpl ?? ""));
-        const receiptHtml = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ReceiptHtml ?? ""));
-        const receiptJson = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ReceiptJson ?? ""));
         
-        // Auto-print receipt on page load
+        // Auto-print receipt on page load via Android Native Bridge
         document.addEventListener('DOMContentLoaded', async function() {
             const printStatus = document.getElementById('printStatus');
             
             try {
-                console.log('Starting automatic receipt printing...');
-                console.log('Receipt data available:', {
-                    hasZpl: !!receiptZpl,
-                    hasHtml: !!receiptHtml,
-                    hasJson: !!receiptJson
-                });
+                console.log('Starting automatic receipt printing via Android Native Bridge...');
                 
-                if (receiptZpl && receiptHtml) {
-                    // Attempt automatic printing
-                    const result = await autoPrintReceipt(receiptZpl, receiptHtml);
-                    
-                    if (result.success) {
-                        printStatus.innerHTML = '<i class="bi bi-check-circle"></i> Receipt printed successfully!';
-                        printStatus.style.color = '#28a745';
-                        console.log('Receipt printed using method:', result.method);
-                    } else {
-                        printStatus.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Receipt printing attempted (check printer)';
-                        printStatus.style.color = '#ffc107';
-                        console.warn('Receipt printing had issues:', result);
-                    }
-                } else {
+                if (!receiptZpl) {
                     printStatus.innerHTML = '<i class="bi bi-info-circle"></i> Receipt data not available';
                     printStatus.style.color = '#6c757d';
-                    console.warn('Receipt data missing');
+                    console.warn('Receipt ZPL data missing');
+                    return;
+                }
+                
+                // Check if Android bridge is available
+                if (!isPrintingAvailable()) {
+                    printStatus.innerHTML = '<i class="bi bi-exclamation-circle"></i> Printer not connected';
+                    printStatus.style.color = '#dc3545';
+                    console.error('Android Native Bridge not available - ensure custom WebView app is deployed');
+                    return;
+                }
+                
+                // Print via Android Native Bridge
+                const result = await autoPrintReceipt(receiptZpl);
+                
+                if (result.success) {
+                    printStatus.innerHTML = '<i class="bi bi-check-circle"></i> Receipt printed successfully!';
+                    printStatus.style.color = '#28a745';
+                    console.log('Receipt printed successfully via Android Native Bridge');
+                } else {
+                    printStatus.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Print failed: ' + (result.error || 'Unknown error');
+                    printStatus.style.color = '#dc3545';
+                    console.error('Print failed:', result.error);
                 }
             } catch (error) {
                 console.error('Error during auto-print:', error);
-                printStatus.innerHTML = '<i class="bi bi-exclamation-circle"></i> Unable to print receipt';
+                printStatus.innerHTML = '<i class="bi bi-exclamation-circle"></i> Print error: ' + error.message;
                 printStatus.style.color = '#dc3545';
             }
             
