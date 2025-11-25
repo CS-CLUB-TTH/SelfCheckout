@@ -2,7 +2,11 @@ package com.selfcheckout.kiosk;
 
 import android.content.Context;
 import android.hardware.usb.UsbDevice;
+import android.hardware.usb.UsbDeviceConnection;
+import android.hardware.usb.UsbEndpoint;
+import android.hardware.usb.UsbInterface;
 import android.hardware.usb.UsbManager;
+import android.hardware.usb.UsbConstants;
 import android.util.Log;
 
 import org.json.JSONObject;
@@ -11,59 +15,44 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Printer Manager for Zebra Link-OS SDK
+ * Printer Manager for USB Receipt Printers
  * 
- * Handles printer discovery, connection, and printing via USB.
+ * Supports both EPSON (ESC/POS) and Zebra (ZPL) thermal receipt printers via USB.
  * 
- * IMPORTANT: You must add the Zebra Link-OS SDK JAR file to the libs folder:
- * 1. Download from: https://www.zebra.com/us/en/support-downloads/software/printer-software/link-os-multiplatform-sdk.html
- * 2. Copy ZSDK_ANDROID_API.jar to app/libs/
- * 3. Rebuild the project
+ * EPSON Printers (TM-T88VII, etc.):
+ * - Use ESC/POS commands
+ * - Vendor ID: 0x04B8 (1208)
  * 
- * If the SDK is not available, this class will use direct USB communication
- * as a fallback (basic ZPL printing only).
+ * Zebra Printers:
+ * - Use ZPL commands
+ * - Vendor ID: 0x0A5F (2655)
  */
 public class PrinterManager {
     
     private static final String TAG = "PrinterManager";
     
-    // Zebra USB Vendor ID
-    private static final int ZEBRA_VENDOR_ID = 0x0A5F;
+    // USB Vendor IDs
+    private static final int ZEBRA_VENDOR_ID = 0x0A5F;  // 2655
+    private static final int EPSON_VENDOR_ID = 0x04B8;  // 1208
+    
+    // Printer types
+    public enum PrinterType {
+        UNKNOWN,
+        ZEBRA,
+        EPSON
+    }
     
     private final Context context;
     private final UsbManager usbManager;
     private UsbDevice connectedPrinter;
-    private boolean zebraSdkAvailable = false;
-    
-    // Zebra SDK objects (loaded dynamically if SDK is available)
-    private Object zebraConnection;
-    private Object zebraPrinter;
+    private PrinterType printerType = PrinterType.UNKNOWN;
     
     public PrinterManager(Context context) {
         this.context = context;
         this.usbManager = (UsbManager) context.getSystemService(Context.USB_SERVICE);
         
-        // Check if Zebra SDK is available
-        checkZebraSdkAvailability();
-        
         // Initialize connection
         initialize();
-    }
-    
-    /**
-     * Check if Zebra Link-OS SDK is available
-     */
-    private void checkZebraSdkAvailability() {
-        try {
-            // Try to load Zebra SDK classes
-            Class.forName("com.zebra.sdk.comm.UsbConnection");
-            Class.forName("com.zebra.sdk.printer.ZebraPrinterFactory");
-            zebraSdkAvailable = true;
-            Log.i(TAG, "Zebra Link-OS SDK is available");
-        } catch (ClassNotFoundException e) {
-            zebraSdkAvailable = false;
-            Log.w(TAG, "Zebra Link-OS SDK not found - using fallback USB printing");
-        }
     }
     
     /**
@@ -75,7 +64,7 @@ public class PrinterManager {
     }
     
     /**
-     * Find connected Zebra USB printer
+     * Find connected USB printer (EPSON or Zebra)
      */
     private void findConnectedPrinter() {
         if (usbManager == null) {
@@ -83,25 +72,41 @@ public class PrinterManager {
             return;
         }
         
+        connectedPrinter = null;
+        printerType = PrinterType.UNKNOWN;
+        
         HashMap<String, UsbDevice> deviceList = usbManager.getDeviceList();
         Log.i(TAG, "Found " + deviceList.size() + " USB devices");
         
         for (Map.Entry<String, UsbDevice> entry : deviceList.entrySet()) {
             UsbDevice device = entry.getValue();
+            int vendorId = device.getVendorId();
+            
             Log.d(TAG, "USB Device: " + device.getDeviceName() 
-                + " VID: " + device.getVendorId() 
+                + " VID: " + vendorId 
                 + " PID: " + device.getProductId());
             
-            // Check for Zebra printer
-            if (device.getVendorId() == ZEBRA_VENDOR_ID) {
+            // Check for EPSON printer (prioritize EPSON)
+            if (vendorId == EPSON_VENDOR_ID) {
                 connectedPrinter = device;
-                Log.i(TAG, "Found Zebra printer: " + device.getDeviceName());
+                printerType = PrinterType.EPSON;
+                Log.i(TAG, "Found EPSON printer: " + device.getDeviceName());
                 break;
+            }
+            
+            // Check for Zebra printer
+            if (vendorId == ZEBRA_VENDOR_ID) {
+                connectedPrinter = device;
+                printerType = PrinterType.ZEBRA;
+                Log.i(TAG, "Found Zebra printer: " + device.getDeviceName());
+                // Don't break - continue looking for EPSON
             }
         }
         
         if (connectedPrinter == null) {
-            Log.w(TAG, "No Zebra printer found");
+            Log.w(TAG, "No supported printer found (EPSON or Zebra)");
+        } else {
+            Log.i(TAG, "Connected printer type: " + printerType);
         }
     }
     
@@ -116,7 +121,33 @@ public class PrinterManager {
     }
     
     /**
-     * Print ZPL data to the connected printer
+     * Get the type of connected printer
+     */
+    public PrinterType getPrinterType() {
+        return printerType;
+    }
+    
+    /**
+     * Print ESC/POS data to EPSON printer
+     * 
+     * @param escPosData ESC/POS commands to print
+     * @return true if printing succeeded
+     */
+    public boolean printEscPos(String escPosData) {
+        if (!isPrinterAvailable()) {
+            Log.e(TAG, "No printer available");
+            return false;
+        }
+        
+        if (printerType != PrinterType.EPSON) {
+            Log.w(TAG, "Connected printer is not EPSON, attempting ESC/POS anyway");
+        }
+        
+        return printWithDirectUsb(escPosData);
+    }
+    
+    /**
+     * Print ZPL data to Zebra printer
      * 
      * @param zplData ZPL commands to print
      * @return true if printing succeeded
@@ -127,58 +158,40 @@ public class PrinterManager {
             return false;
         }
         
-        if (zebraSdkAvailable) {
-            return printWithZebraSdk(zplData);
-        } else {
-            return printWithDirectUsb(zplData);
+        if (printerType != PrinterType.ZEBRA) {
+            Log.w(TAG, "Connected printer is not Zebra, ZPL may not work");
         }
+        
+        return printWithDirectUsb(zplData);
     }
     
     /**
-     * Print using Zebra Link-OS SDK
+     * Print receipt - automatically detects printer type and uses appropriate format
+     * For EPSON: expects ESC/POS data
+     * For Zebra: expects ZPL data
+     * 
+     * @param printData Print data (ESC/POS or ZPL depending on printer type)
+     * @return true if printing succeeded
      */
-    private boolean printWithZebraSdk(String zplData) {
-        try {
-            Log.i(TAG, "Printing with Zebra SDK...");
-            
-            // Use reflection to call Zebra SDK (allows compilation without SDK)
-            Class<?> usbConnectionClass = Class.forName("com.zebra.sdk.comm.UsbConnection");
-            Class<?> connectionClass = Class.forName("com.zebra.sdk.comm.Connection");
-            
-            // Create USB connection
-            Object connection = usbConnectionClass
-                .getConstructor(UsbManager.class, UsbDevice.class)
-                .newInstance(usbManager, connectedPrinter);
-            
-            // Open connection
-            connectionClass.getMethod("open").invoke(connection);
-            
-            // Write ZPL data
-            byte[] data = zplData.getBytes("UTF-8");
-            connectionClass.getMethod("write", byte[].class).invoke(connection, data);
-            
-            // Close connection
-            connectionClass.getMethod("close").invoke(connection);
-            
-            Log.i(TAG, "Print job sent successfully via Zebra SDK");
-            return true;
-            
-        } catch (Exception e) {
-            Log.e(TAG, "Zebra SDK print error: " + e.getMessage(), e);
-            // Try fallback
-            return printWithDirectUsb(zplData);
+    public boolean printReceipt(String printData) {
+        if (!isPrinterAvailable()) {
+            Log.e(TAG, "No printer available");
+            return false;
         }
+        
+        Log.i(TAG, "Printing receipt to " + printerType + " printer");
+        return printWithDirectUsb(printData);
     }
     
     /**
-     * Print using direct USB communication (fallback if SDK not available)
+     * Print using direct USB communication
      */
-    private boolean printWithDirectUsb(String zplData) {
-        android.hardware.usb.UsbDeviceConnection connection = null;
-        android.hardware.usb.UsbInterface intf = null;
+    private boolean printWithDirectUsb(String printData) {
+        UsbDeviceConnection connection = null;
+        UsbInterface intf = null;
         
         try {
-            Log.i(TAG, "Printing with direct USB...");
+            Log.i(TAG, "Printing with direct USB to " + printerType + " printer...");
             
             if (!usbManager.hasPermission(connectedPrinter)) {
                 Log.e(TAG, "No USB permission for printer");
@@ -194,12 +207,12 @@ public class PrinterManager {
             
             // Find the bulk OUT endpoint
             intf = connectedPrinter.getInterface(0);
-            android.hardware.usb.UsbEndpoint endpointOut = null;
+            UsbEndpoint endpointOut = null;
             
             for (int i = 0; i < intf.getEndpointCount(); i++) {
-                android.hardware.usb.UsbEndpoint ep = intf.getEndpoint(i);
-                if (ep.getType() == android.hardware.usb.UsbConstants.USB_ENDPOINT_XFER_BULK
-                    && ep.getDirection() == android.hardware.usb.UsbConstants.USB_DIR_OUT) {
+                UsbEndpoint ep = intf.getEndpoint(i);
+                if (ep.getType() == UsbConstants.USB_ENDPOINT_XFER_BULK
+                    && ep.getDirection() == UsbConstants.USB_DIR_OUT) {
                     endpointOut = ep;
                     break;
                 }
@@ -213,8 +226,8 @@ public class PrinterManager {
             // Claim interface
             connection.claimInterface(intf, true);
             
-            // Send ZPL data
-            byte[] data = zplData.getBytes("UTF-8");
+            // Send print data
+            byte[] data = printData.getBytes("UTF-8");
             int result = connection.bulkTransfer(endpointOut, data, data.length, 5000);
             
             if (result >= 0) {
@@ -246,7 +259,7 @@ public class PrinterManager {
         try {
             JSONObject status = new JSONObject();
             status.put("available", isPrinterAvailable());
-            status.put("zebraSdkAvailable", zebraSdkAvailable);
+            status.put("printerType", printerType.toString());
             
             if (connectedPrinter != null) {
                 status.put("deviceName", connectedPrinter.getDeviceName());
@@ -266,7 +279,6 @@ public class PrinterManager {
     public void disconnect() {
         Log.i(TAG, "Disconnecting printer...");
         connectedPrinter = null;
-        zebraConnection = null;
-        zebraPrinter = null;
+        printerType = PrinterType.UNKNOWN;
     }
 }

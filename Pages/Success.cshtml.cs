@@ -25,9 +25,9 @@ public class SuccessModel : PageModel
     public string? CardLast4 { get; set; }
     
     /// <summary>
-    /// ZPL receipt data for Android Native Bridge printing
+    /// ESC/POS receipt data for EPSON printers via Android app
     /// </summary>
-    public string? ReceiptZpl { get; set; }
+    public string? ReceiptEscPos { get; set; }
 
     public void OnGet()
     {
@@ -84,14 +84,13 @@ public class SuccessModel : PageModel
 
         try
         {
-            // Generate ZPL receipt for Android Native Bridge printing
-            ReceiptZpl = _receiptService.GenerateZplReceipt(receipt);
-
-            _logger.LogInformation("ZPL receipt generated for transaction {TransactionId}", TransactionId);
+            // Generate ESC/POS receipt for EPSON printers
+            ReceiptEscPos = _receiptService.GenerateEscPosReceipt(receipt);
+            _logger.LogInformation("ESC/POS receipt generated for transaction {TransactionId}", TransactionId);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to generate ZPL receipt for transaction {TransactionId}", TransactionId);
+            _logger.LogError(ex, "Failed to generate ESC/POS receipt for transaction {TransactionId}", TransactionId);
         }
     }
 
