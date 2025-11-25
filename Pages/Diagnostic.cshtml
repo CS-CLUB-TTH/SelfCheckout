@@ -1,0 +1,313 @@
+@page
+@model DiagnosticModel
+@{
+    ViewData["Title"] = "Browser Diagnostic";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kiosk Browser Diagnostic</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #163f36;
+            border-bottom: 2px solid #4b9762;
+            padding-bottom: 10px;
+        }
+        .section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .section h2 {
+            color: #4b9762;
+            margin-top: 0;
+        }
+        .test-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .test-item:last-child {
+            border-bottom: none;
+        }
+        .pass {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .fail {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .warn {
+            color: #ffc107;
+            font-weight: bold;
+        }
+        .info {
+            color: #17a2b8;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #4b9762;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 5px;
+            border: none;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background: #163f36;
+        }
+        #errorLog {
+            background: #ffebee;
+            display: none;
+        }
+        #errorLog h2 {
+            color: #c62828;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Kiosk Browser Diagnostic</h1>
+    <p>This page tests your browser's JavaScript compatibility and features.</p>
+
+    <div class="section">
+        <h2>📱 Browser Information</h2>
+        <div class="test-item" id="userAgent"></div>
+        <div class="test-item" id="browserName"></div>
+        <div class="test-item" id="screenInfo"></div>
+        <div class="test-item" id="viewportInfo"></div>
+    </div>
+
+    <div class="section">
+        <h2>⚡ ES5 Features (Required)</h2>
+        <div class="test-item" id="es5-json"></div>
+        <div class="test-item" id="es5-array"></div>
+        <div class="test-item" id="es5-function"></div>
+        <div class="test-item" id="es5-object"></div>
+    </div>
+
+    <div class="section">
+        <h2>🚀 ES6 Features (May cause issues on older browsers)</h2>
+        <div class="test-item" id="es6-let"></div>
+        <div class="test-item" id="es6-const"></div>
+        <div class="test-item" id="es6-arrow"></div>
+        <div class="test-item" id="es6-class"></div>
+        <div class="test-item" id="es6-template"></div>
+        <div class="test-item" id="es6-promise"></div>
+        <div class="test-item" id="es6-async"></div>
+        <div class="test-item" id="es6-symbol"></div>
+        <div class="test-item" id="es6-spread"></div>
+        <div class="test-item" id="es6-destructuring"></div>
+    </div>
+
+    <div class="section">
+        <h2>🌐 Web APIs</h2>
+        <div class="test-item" id="api-fetch"></div>
+        <div class="test-item" id="api-serviceworker"></div>
+        <div class="test-item" id="api-nfc"></div>
+        <div class="test-item" id="api-android"></div>
+    </div>
+
+    <div class="section">
+        <h2>📊 Summary</h2>
+        <div id="summary"></div>
+    </div>
+
+    <div class="section" id="errorLog">
+        <h2>❌ JavaScript Errors</h2>
+        <pre id="errorContent"></pre>
+    </div>
+
+    <div class="section">
+        <h2>🔗 Navigation Test</h2>
+        <a href="/" class="btn">Home Page</a>
+        <a href="/Nfc" class="btn">NFC Page</a>
+        <a href="/Cart" class="btn">Cart Page</a>
+        <button class="btn" onclick="location.reload()">Refresh</button>
+    </div>
+
+    <script>
+        // Error collection
+        var errors = [];
+        window.onerror = function(msg, url, line, col, error) {
+            errors.push('Error: ' + msg + ' at line ' + line);
+            showErrors();
+            return false;
+        };
+
+        function showErrors() {
+            if (errors.length > 0) {
+                document.getElementById('errorLog').style.display = 'block';
+                document.getElementById('errorContent').textContent = errors.join('\n');
+            }
+        }
+
+        function setResult(id, passed, message) {
+            var el = document.getElementById(id);
+            if (el) {
+                var status = passed ? '<span class="pass">✓ PASS</span>' : '<span class="fail">✗ FAIL</span>';
+                el.innerHTML = status + ' - ' + message;
+            }
+        }
+
+        function setInfo(id, message) {
+            var el = document.getElementById(id);
+            if (el) {
+                el.innerHTML = '<span class="info">ℹ</span> ' + message;
+            }
+        }
+
+        // Browser Info
+        setInfo('userAgent', 'User Agent: ' + navigator.userAgent);
+        
+        var browserName = 'Unknown';
+        var ua = navigator.userAgent;
+        if (ua.indexOf('Chrome') > -1) browserName = 'Chrome';
+        else if (ua.indexOf('Firefox') > -1) browserName = 'Firefox';
+        else if (ua.indexOf('Safari') > -1) browserName = 'Safari';
+        else if (ua.indexOf('Edge') > -1) browserName = 'Edge';
+        else if (ua.indexOf('MSIE') > -1 || ua.indexOf('Trident') > -1) browserName = 'Internet Explorer';
+        setInfo('browserName', 'Browser: ' + browserName);
+        
+        setInfo('screenInfo', 'Screen: ' + screen.width + 'x' + screen.height + ' (Pixel Ratio: ' + (window.devicePixelRatio || 1) + ')');
+        setInfo('viewportInfo', 'Viewport: ' + window.innerWidth + 'x' + window.innerHeight);
+
+        // ES5 Tests
+        setResult('es5-json', typeof JSON !== 'undefined', 'JSON support');
+        setResult('es5-array', typeof Array.prototype.forEach === 'function', 'Array.forEach()');
+        setResult('es5-function', typeof Function.prototype.bind === 'function', 'Function.bind()');
+        setResult('es5-object', typeof Object.keys === 'function', 'Object.keys()');
+
+        // ES6 Tests - using try/catch to avoid syntax errors
+        var es6Results = {
+            let: false,
+            const: false,
+            arrow: false,
+            class: false,
+            template: false,
+            promise: false,
+            async: false,
+            symbol: false,
+            spread: false,
+            destructuring: false
+        };
+
+        // Test let
+        try {
+            new Function('let x = 1;');
+            es6Results.let = true;
+        } catch(e) {}
+        setResult('es6-let', es6Results.let, 'let keyword');
+
+        // Test const
+        try {
+            new Function('const x = 1;');
+            es6Results.const = true;
+        } catch(e) {}
+        setResult('es6-const', es6Results.const, 'const keyword');
+
+        // Test arrow functions
+        try {
+            new Function('var f = () => 1;');
+            es6Results.arrow = true;
+        } catch(e) {}
+        setResult('es6-arrow', es6Results.arrow, 'Arrow functions () => {}');
+
+        // Test class
+        try {
+            new Function('class Test {}');
+            es6Results.class = true;
+        } catch(e) {}
+        setResult('es6-class', es6Results.class, 'class keyword');
+
+        // Test template literals
+        try {
+            new Function('var x = `test`;');
+            es6Results.template = true;
+        } catch(e) {}
+        setResult('es6-template', es6Results.template, 'Template literals `${}`');
+
+        // Test Promise
+        es6Results.promise = typeof Promise !== 'undefined';
+        setResult('es6-promise', es6Results.promise, 'Promise');
+
+        // Test async/await
+        try {
+            new Function('async function test() {}');
+            es6Results.async = true;
+        } catch(e) {}
+        setResult('es6-async', es6Results.async, 'async/await');
+
+        // Test Symbol
+        es6Results.symbol = typeof Symbol !== 'undefined';
+        setResult('es6-symbol', es6Results.symbol, 'Symbol');
+
+        // Test spread operator
+        try {
+            new Function('var a = [1,2]; var b = [...a];');
+            es6Results.spread = true;
+        } catch(e) {}
+        setResult('es6-spread', es6Results.spread, 'Spread operator (...)');
+
+        // Test destructuring
+        try {
+            new Function('var {a} = {a:1};');
+            es6Results.destructuring = true;
+        } catch(e) {}
+        setResult('es6-destructuring', es6Results.destructuring, 'Destructuring assignment');
+
+        // Web APIs
+        setResult('api-fetch', typeof fetch === 'function', 'Fetch API');
+        setResult('api-serviceworker', 'serviceWorker' in navigator, 'Service Worker');
+        setResult('api-nfc', 'NDEFReader' in window, 'Web NFC API');
+        
+        var androidAvailable = typeof Android !== 'undefined';
+        setResult('api-android', androidAvailable, 'Android Native Bridge (window.Android)');
+
+        // Summary
+        var es6Count = 0;
+        for (var key in es6Results) {
+            if (es6Results[key]) es6Count++;
+        }
+
+        var summaryEl = document.getElementById('summary');
+        var summaryHtml = '';
+        
+        if (es6Count === 10) {
+            summaryHtml = '<p class="pass">✓ Your browser supports all ES6 features. The app should work fine.</p>';
+        } else if (es6Count >= 6) {
+            summaryHtml = '<p class="warn">⚠ Your browser supports some ES6 features (' + es6Count + '/10). Some features may not work.</p>';
+        } else {
+            summaryHtml = '<p class="fail">✗ Your browser has limited ES6 support (' + es6Count + '/10). The app needs ES5-compatible code.</p>';
+        }
+
+        if (!es6Results.class || !es6Results.async) {
+            summaryHtml += '<p class="info"><strong>Issue Found:</strong> Your browser does not support <code>class</code> or <code>async/await</code>. ';
+            summaryHtml += 'The zebra-printer.js file has been updated to use ES5 syntax to fix this.</p>';
+        }
+
+        summaryEl.innerHTML = summaryHtml;
+    </script>
+</body>
+</html>
