@@ -128,10 +128,66 @@ if ('serviceWorker' in navigator) {
     const statusEl = document.getElementById('nfcStatus');
     const cancelBtn = document.getElementById('nfcCancel');
 
+    // Check if running in Android WebView with native NFC support
+    const isAndroidApp = typeof window.Android !== 'undefined' && typeof window.Android.isNfcAvailable === 'function';
+
     // Modern NFC scanner with clean error handling
     async function startNfcScan() {
         if (!statusEl) return;
 
+        // Use native Android NFC if available
+        if (isAndroidApp) {
+            startAndroidNfcScan();
+            return;
+        }
+
+        // Fall back to Web NFC API for browsers
+        startWebNfcScan();
+    }
+
+    // Android Native NFC via JavaScript bridge
+    function startAndroidNfcScan() {
+        console.log('Using Android native NFC');
+        
+        // Check NFC availability
+        if (!window.Android.isNfcAvailable()) {
+            updateStatus('noSupport', 'error');
+            return;
+        }
+
+        // Check if NFC is enabled
+        if (!window.Android.isNfcEnabled()) {
+            statusEl.innerHTML = 'NFC is Disabled<br><small>Please enable NFC in device settings</small>';
+            statusEl.classList.add('error');
+            return;
+        }
+
+        updateStatus('requesting');
+
+        // Set up callback for NFC tag detection using a namespaced approach
+        // This prevents conflicts with other potential handlers
+        window.SelfCheckoutNfc = window.SelfCheckoutNfc || {};
+        window.SelfCheckoutNfc.onTagDetected = function(serialNumber) {
+            console.log('NFC Tag detected via Android bridge:', serialNumber);
+            handleNfcRead({ serialNumber: serialNumber });
+        };
+        // Also set the global callback for Android bridge compatibility
+        window.onNfcTagDetected = window.SelfCheckoutNfc.onTagDetected;
+
+        // Start NFC scan via Android bridge
+        const started = window.Android.startNfcScan();
+        
+        if (started) {
+            console.log('✓ Android NFC scan started');
+            updateStatus('waiting', 'reading');
+        } else {
+            updateStatus('error', 'error');
+            setTimeout(startAndroidNfcScan, 3000);
+        }
+    }
+
+    // Web NFC API for browsers (Chrome on Android)
+    async function startWebNfcScan() {
         // Check NFC support
         if (!('NDEFReader' in window)) {
             updateStatus('noSupport', 'error');
@@ -144,7 +200,7 @@ if ('serviceWorker' in navigator) {
 
             // Start scanning
             await ndef.scan();
-            console.log('✓ NFC scan started');
+            console.log('✓ Web NFC scan started');
             
             updateStatus('waiting', 'reading');
 
@@ -176,7 +232,7 @@ if ('serviceWorker' in navigator) {
 
         let cardIdentifier = serialNumber;
 
-        if (!cardIdentifier && message.records.length > 0) {
+        if (!cardIdentifier && message && message.records && message.records.length > 0) {
             try {
                 const decoder = new TextDecoder();
                 cardIdentifier = message.records
@@ -207,6 +263,11 @@ if ('serviceWorker' in navigator) {
         }
 
         updateStatus('loading', 'success');
+
+        // Stop NFC scan if using Android bridge
+        if (isAndroidApp && window.Android.stopNfcScan) {
+            window.Android.stopNfcScan();
+        }
 
         // Navigate to cart
         setTimeout(() => {
@@ -253,11 +314,15 @@ if ('serviceWorker' in navigator) {
     // Initialize NFC on page load
     document.addEventListener('DOMContentLoaded', () => {
         console.log('NFC Page Initialized');
+        console.log('Android app detected:', isAndroidApp);
         startNfcScan();
     });
 
-    // Cancel button
+    // Cancel button - also stop NFC scan
     cancelBtn?.addEventListener('click', () => {
+        if (isAndroidApp && window.Android.stopNfcScan) {
+            window.Android.stopNfcScan();
+        }
         window.location.href = '/';
     });
 })();

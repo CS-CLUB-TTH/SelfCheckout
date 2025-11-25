@@ -2,8 +2,15 @@ package com.selfcheckout.kiosk;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.PendingIntent;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Color;
+import android.nfc.NfcAdapter;
+import android.nfc.Tag;
+import android.nfc.tech.MifareClassic;
+import android.nfc.tech.MifareUltralight;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -27,6 +34,10 @@ import android.widget.Toast;
  * - window.Android.printReceipt(zplData) - Print ZPL data to connected printer
  * - window.Android.isPrinterAvailable() - Check if printer is connected
  * - window.Android.getPrinterStatus() - Get printer status as JSON
+ * - window.Android.isNfcAvailable() - Check if NFC is available
+ * - window.Android.isNfcEnabled() - Check if NFC is enabled
+ * - window.Android.startNfcScan() - Start NFC foreground dispatch
+ * - window.Android.stopNfcScan() - Stop NFC foreground dispatch
  */
 public class MainActivity extends Activity {
     
@@ -42,6 +53,13 @@ public class MainActivity extends Activity {
     
     private WebView webView;
     private PrinterManager printerManager;
+    
+    // NFC components
+    private NfcAdapter nfcAdapter;
+    private PendingIntent nfcPendingIntent;
+    private IntentFilter[] nfcIntentFilters;
+    private String[][] nfcTechLists;
+    private boolean nfcScanActive = false;
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
@@ -54,18 +72,146 @@ public class MainActivity extends Activity {
         // Initialize printer manager
         printerManager = new PrinterManager(this);
         
+        // Initialize NFC adapter
+        initializeNfc();
+        
         // Create and configure WebView
         webView = new WebView(this);
         setContentView(webView);
         
         configureWebView();
         
-        // Add JavaScript interface for printing
+        // Add JavaScript interface for printing and NFC
         webView.addJavascriptInterface(new PrintInterface(), "Android");
         
         // Load the web application
         Log.i(TAG, "Loading web app: " + WEB_APP_URL);
         webView.loadUrl(WEB_APP_URL);
+    }
+    
+    /**
+     * Initialize NFC adapter and foreground dispatch
+     */
+    private void initializeNfc() {
+        nfcAdapter = NfcAdapter.getDefaultAdapter(this);
+        
+        if (nfcAdapter == null) {
+            Log.w(TAG, "NFC is not available on this device");
+            return;
+        }
+        
+        if (!nfcAdapter.isEnabled()) {
+            Log.w(TAG, "NFC is disabled. Please enable NFC in settings.");
+        }
+        
+        // Create PendingIntent for foreground dispatch
+        Intent intent = new Intent(this, getClass());
+        intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        nfcPendingIntent = PendingIntent.getActivity(
+            this, 0, intent, PendingIntent.FLAG_IMMUTABLE
+        );
+        
+        // Setup intent filters for NFC discovery
+        IntentFilter ndefFilter = new IntentFilter(NfcAdapter.ACTION_NDEF_DISCOVERED);
+        IntentFilter tagFilter = new IntentFilter(NfcAdapter.ACTION_TAG_DISCOVERED);
+        IntentFilter techFilter = new IntentFilter(NfcAdapter.ACTION_TECH_DISCOVERED);
+        
+        nfcIntentFilters = new IntentFilter[] { ndefFilter, tagFilter, techFilter };
+        
+        // Setup tech lists for NFC discovery
+        nfcTechLists = new String[][] {
+            new String[] { MifareClassic.class.getName() },
+            new String[] { MifareUltralight.class.getName() },
+            new String[] { android.nfc.tech.NfcA.class.getName() },
+            new String[] { android.nfc.tech.NfcB.class.getName() },
+            new String[] { android.nfc.tech.IsoDep.class.getName() },
+            new String[] { android.nfc.tech.Ndef.class.getName() }
+        };
+        
+        Log.i(TAG, "NFC initialized successfully");
+    }
+    
+    /**
+     * Enable NFC foreground dispatch
+     */
+    private void enableNfcForegroundDispatch() {
+        if (nfcAdapter != null && nfcAdapter.isEnabled()) {
+            try {
+                nfcAdapter.enableForegroundDispatch(this, nfcPendingIntent, nfcIntentFilters, nfcTechLists);
+                nfcScanActive = true;
+                Log.i(TAG, "NFC foreground dispatch enabled");
+            } catch (Exception e) {
+                Log.e(TAG, "Error enabling NFC foreground dispatch: " + e.getMessage());
+            }
+        }
+    }
+    
+    /**
+     * Disable NFC foreground dispatch
+     */
+    private void disableNfcForegroundDispatch() {
+        if (nfcAdapter != null) {
+            try {
+                nfcAdapter.disableForegroundDispatch(this);
+                nfcScanActive = false;
+                Log.i(TAG, "NFC foreground dispatch disabled");
+            } catch (Exception e) {
+                Log.e(TAG, "Error disabling NFC foreground dispatch: " + e.getMessage());
+            }
+        }
+    }
+    
+    /**
+     * Handle NFC intent
+     */
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        
+        String action = intent.getAction();
+        if (NfcAdapter.ACTION_TAG_DISCOVERED.equals(action) ||
+            NfcAdapter.ACTION_TECH_DISCOVERED.equals(action) ||
+            NfcAdapter.ACTION_NDEF_DISCOVERED.equals(action)) {
+            
+            Tag tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
+            if (tag != null) {
+                handleNfcTag(tag);
+            }
+        }
+    }
+    
+    /**
+     * Process NFC tag and send to JavaScript
+     */
+    private void handleNfcTag(Tag tag) {
+        byte[] tagId = tag.getId();
+        String serialNumber = bytesToHexColonSeparated(tagId);
+        
+        Log.i(TAG, "NFC Tag detected - Serial: " + serialNumber);
+        
+        // Sanitize serial number to prevent XSS - only allow hex characters and colons
+        String sanitizedSerial = serialNumber.replaceAll("[^0-9A-Fa-f:]", "");
+        
+        // Notify JavaScript about the NFC tag
+        runOnUiThread(() -> {
+            String jsCallback = String.format(
+                "javascript:if(window.onNfcTagDetected){window.onNfcTagDetected('%s');}",
+                sanitizedSerial
+            );
+            webView.evaluateJavascript(jsCallback, null);
+        });
+    }
+    
+    /**
+     * Convert byte array to hex string with colon separator
+     */
+    private String bytesToHexColonSeparated(byte[] bytes) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < bytes.length; i++) {
+            if (i > 0) sb.append(":");
+            sb.append(String.format("%02X", bytes[i]));
+        }
+        return sb.toString();
     }
     
     /**
@@ -157,7 +303,7 @@ public class MainActivity extends Activity {
     }
     
     /**
-     * JavaScript interface for native printing
+     * JavaScript interface for native printing and NFC
      * Exposes methods to the web application via window.Android
      */
     public class PrintInterface {
@@ -224,6 +370,66 @@ public class MainActivity extends Activity {
         }
         
         /**
+         * Check if NFC is available on device
+         * Called from JavaScript: window.Android.isNfcAvailable()
+         * 
+         * @return true if NFC hardware is available
+         */
+        @JavascriptInterface
+        public boolean isNfcAvailable() {
+            boolean available = nfcAdapter != null;
+            Log.i(TAG, "isNfcAvailable: " + available);
+            return available;
+        }
+        
+        /**
+         * Check if NFC is enabled
+         * Called from JavaScript: window.Android.isNfcEnabled()
+         * 
+         * @return true if NFC is enabled
+         */
+        @JavascriptInterface
+        public boolean isNfcEnabled() {
+            boolean enabled = nfcAdapter != null && nfcAdapter.isEnabled();
+            Log.i(TAG, "isNfcEnabled: " + enabled);
+            return enabled;
+        }
+        
+        /**
+         * Start NFC scanning
+         * Called from JavaScript: window.Android.startNfcScan()
+         * 
+         * @return true if NFC scan started successfully
+         */
+        @JavascriptInterface
+        public boolean startNfcScan() {
+            Log.i(TAG, "startNfcScan called from JavaScript");
+            
+            if (nfcAdapter == null) {
+                Log.w(TAG, "NFC not available");
+                return false;
+            }
+            
+            if (!nfcAdapter.isEnabled()) {
+                Log.w(TAG, "NFC is disabled");
+                return false;
+            }
+            
+            runOnUiThread(() -> enableNfcForegroundDispatch());
+            return true;
+        }
+        
+        /**
+         * Stop NFC scanning
+         * Called from JavaScript: window.Android.stopNfcScan()
+         */
+        @JavascriptInterface
+        public void stopNfcScan() {
+            Log.i(TAG, "stopNfcScan called from JavaScript");
+            runOnUiThread(() -> disableNfcForegroundDispatch());
+        }
+        
+        /**
          * Show toast message on UI thread
          */
         private void showToast(final String message) {
@@ -258,6 +464,18 @@ public class MainActivity extends Activity {
         super.onResume();
         // Reconnect printer if needed
         printerManager.initialize();
+        
+        // Enable NFC foreground dispatch if scan was active
+        if (nfcScanActive) {
+            enableNfcForegroundDispatch();
+        }
+    }
+    
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // Disable NFC foreground dispatch to release resources
+        disableNfcForegroundDispatch();
     }
     
     @Override
