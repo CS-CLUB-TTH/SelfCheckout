@@ -4,14 +4,18 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Color;
+import android.hardware.usb.UsbDevice;
+import android.hardware.usb.UsbManager;
 import android.nfc.NfcAdapter;
 import android.nfc.Tag;
 import android.nfc.tech.MifareClassic;
 import android.nfc.tech.MifareUltralight;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -50,6 +54,13 @@ public class MainActivity extends Activity {
     
     private static final String TAG = "SelfCheckoutKiosk";
     
+    // USB Permission action
+    private static final String ACTION_USB_PERMISSION = "com.selfcheckout.kiosk.USB_PERMISSION";
+    
+    // USB Vendor IDs for printers
+    private static final int EPSON_VENDOR_ID = 0x04B8;  // 1208
+    private static final int ZEBRA_VENDOR_ID = 0x0A5F;  // 2655
+    
     // ============================================================
     // CONFIGURATION
     // Change WEB_APP_URL to your ASP.NET Core web app URL
@@ -64,6 +75,10 @@ public class MainActivity extends Activity {
     
     private WebView webView;
     private PrinterManager printerManager;
+    
+    // USB Permission components
+    private UsbManager usbManager;
+    private PendingIntent usbPermissionIntent;
     
     // NFC components
     private NfcAdapter nfcAdapter;
@@ -80,8 +95,14 @@ public class MainActivity extends Activity {
         // Enable fullscreen kiosk mode
         setupKioskMode();
         
+        // Initialize USB permission handling for printer
+        initializeUsbPermission();
+        
         // Initialize printer manager
         printerManager = new PrinterManager(this);
+        
+        // Request USB permission for printer if needed
+        requestPrinterPermission();
         
         // Initialize NFC adapter
         initializeNfc();
@@ -98,6 +119,94 @@ public class MainActivity extends Activity {
         // Load the web application
         Log.i(TAG, "Loading web app: " + WEB_APP_URL);
         webView.loadUrl(WEB_APP_URL);
+    }
+    
+    /**
+     * BroadcastReceiver for USB permission result
+     */
+    private final BroadcastReceiver usbPermissionReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (ACTION_USB_PERMISSION.equals(action)) {
+                synchronized (this) {
+                    // Use the appropriate getParcelableExtra method based on API level
+                    UsbDevice device;
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        device = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE, UsbDevice.class);
+                    } else {
+                        @SuppressWarnings("deprecation")
+                        UsbDevice deprecatedDevice = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+                        device = deprecatedDevice;
+                    }
+                    
+                    if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
+                        if (device != null) {
+                            Log.i(TAG, "USB permission granted for device: " + device.getDeviceName());
+                            // Reinitialize printer manager now that we have permission
+                            printerManager.initialize();
+                        }
+                    } else {
+                        Log.w(TAG, "USB permission denied for device: " + (device != null ? device.getDeviceName() : "unknown"));
+                    }
+                }
+            }
+        }
+    };
+    
+    /**
+     * Initialize USB permission handling
+     */
+    private void initializeUsbPermission() {
+        usbManager = (UsbManager) getSystemService(Context.USB_SERVICE);
+        
+        // Create PendingIntent for USB permission request
+        // FLAG_MUTABLE is required so the system can add the USB device to the intent
+        Intent intent = new Intent(ACTION_USB_PERMISSION);
+        intent.setPackage(getPackageName());
+        usbPermissionIntent = PendingIntent.getBroadcast(
+            this, 0, intent, PendingIntent.FLAG_MUTABLE
+        );
+        
+        // Register the USB permission receiver
+        // Use RECEIVER_NOT_EXPORTED on API 33+ for security, otherwise use standard registration
+        IntentFilter filter = new IntentFilter(ACTION_USB_PERMISSION);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(usbPermissionReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+        } else {
+            registerReceiver(usbPermissionReceiver, filter);
+        }
+        
+        Log.i(TAG, "USB permission handling initialized");
+    }
+    
+    /**
+     * Request USB permission for connected printer
+     */
+    private void requestPrinterPermission() {
+        if (usbManager == null) {
+            Log.w(TAG, "USB Manager not available");
+            return;
+        }
+        
+        if (usbPermissionIntent == null) {
+            Log.w(TAG, "USB permission intent not initialized");
+            return;
+        }
+        
+        // Find printer and request permission
+        for (UsbDevice device : usbManager.getDeviceList().values()) {
+            int vendorId = device.getVendorId();
+            // Check for EPSON or Zebra printer
+            if (vendorId == EPSON_VENDOR_ID || vendorId == ZEBRA_VENDOR_ID) {
+                if (!usbManager.hasPermission(device)) {
+                    Log.i(TAG, "Requesting USB permission for printer: " + device.getDeviceName());
+                    usbManager.requestPermission(device, usbPermissionIntent);
+                } else {
+                    Log.i(TAG, "USB permission already granted for printer: " + device.getDeviceName());
+                }
+            }
+        }
     }
     
     /**
@@ -556,6 +665,9 @@ public class MainActivity extends Activity {
         // Reconnect printer if needed
         printerManager.initialize();
         
+        // Request USB permission for printer if needed (in case a new printer is connected)
+        requestPrinterPermission();
+        
         // Always enable NFC foreground dispatch when activity is in foreground
         // This ensures NFC reads work on the first tap
         if (nfcAdapter != null && nfcAdapter.isEnabled()) {
@@ -573,6 +685,12 @@ public class MainActivity extends Activity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        // Unregister USB permission receiver
+        try {
+            unregisterReceiver(usbPermissionReceiver);
+        } catch (Exception e) {
+            Log.e(TAG, "Error unregistering USB receiver: " + e.getMessage());
+        }
         printerManager.disconnect();
         if (webView != null) {
             webView.destroy();
