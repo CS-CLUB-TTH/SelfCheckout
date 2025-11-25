@@ -86,27 +86,30 @@ public class PrinterManager {
                 + " VID: " + vendorId 
                 + " PID: " + device.getProductId());
             
-            // Check for EPSON printer (prioritize EPSON)
+            // Check for EPSON printer first (prioritized for this deployment)
             if (vendorId == EPSON_VENDOR_ID) {
                 connectedPrinter = device;
                 printerType = PrinterType.EPSON;
                 Log.i(TAG, "Found EPSON printer: " + device.getDeviceName());
-                break;
+                break; // EPSON found, stop searching
             }
             
-            // Check for Zebra printer
+            // Check for Zebra printer (fallback if no EPSON found yet)
             if (vendorId == ZEBRA_VENDOR_ID) {
-                connectedPrinter = device;
-                printerType = PrinterType.ZEBRA;
-                Log.i(TAG, "Found Zebra printer: " + device.getDeviceName());
-                // Don't break - continue looking for EPSON
+                // Only set if we haven't found an EPSON printer
+                if (connectedPrinter == null) {
+                    connectedPrinter = device;
+                    printerType = PrinterType.ZEBRA;
+                    Log.i(TAG, "Found Zebra printer: " + device.getDeviceName());
+                }
+                // Continue searching in case EPSON is also connected
             }
         }
         
         if (connectedPrinter == null) {
             Log.w(TAG, "No supported printer found (EPSON or Zebra)");
         } else {
-            Log.i(TAG, "Connected printer type: " + printerType);
+            Log.i(TAG, "Selected printer type: " + printerType);
         }
     }
     

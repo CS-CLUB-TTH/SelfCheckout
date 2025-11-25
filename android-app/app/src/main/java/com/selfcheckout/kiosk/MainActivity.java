@@ -2,6 +2,7 @@ package com.selfcheckout.kiosk;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
@@ -28,12 +29,18 @@ import android.widget.Toast;
  * Main Activity for Self Checkout Kiosk
  * 
  * Wraps the ASP.NET Core web application in a WebView and provides
- * native printing capabilities via Zebra Link-OS SDK.
+ * native printing capabilities for EPSON and Zebra printers via USB.
+ * 
+ * KIOSK LOCKDOWN:
+ * This app uses Android's Lock Task Mode (screen pinning) to prevent users
+ * from exiting the app. For full lockdown without user confirmation, the app
+ * must be set as Device Owner via ADB or MDM.
  * 
  * JavaScript Interface:
- * - window.Android.printReceipt(zplData) - Print ZPL data to connected printer
+ * - window.Android.printReceipt(data) - Print receipt to connected printer
  * - window.Android.isPrinterAvailable() - Check if printer is connected
  * - window.Android.getPrinterStatus() - Get printer status as JSON
+ * - window.Android.getPrinterType() - Get printer type (EPSON/ZEBRA/UNKNOWN)
  * - window.Android.isNfcAvailable() - Check if NFC is available
  * - window.Android.isNfcEnabled() - Check if NFC is enabled
  * - window.Android.startNfcScan() - Start NFC foreground dispatch
@@ -49,6 +56,10 @@ public class MainActivity extends Activity {
     // Format: https://IP_ADDRESS:PORT/ or http://IP_ADDRESS:PORT/
     // ============================================================
     private static final String WEB_APP_URL = "https://kyrie-deflected-laila.ngrok-free.dev";
+    
+    // Enable/disable kiosk lock (screen pinning)
+    // Set to true to prevent users from exiting the app
+    private static final boolean ENABLE_KIOSK_LOCK = true;
     // ============================================================
     
     private WebView webView;
@@ -215,7 +226,18 @@ public class MainActivity extends Activity {
     }
     
     /**
-     * Configure fullscreen kiosk mode
+     * Configure fullscreen kiosk mode and enable screen pinning (Lock Task Mode)
+     * 
+     * Lock Task Mode prevents users from:
+     * - Pressing Home button
+     * - Using Recent Apps
+     * - Accessing notifications
+     * - Exiting the app without admin permission
+     * 
+     * NOTE: For full lockdown without user confirmation dialog, you need to:
+     * 1. Set this app as Device Owner via ADB:
+     *    adb shell dpm set-device-owner com.selfcheckout.kiosk/.DeviceAdminReceiver
+     * 2. Or use Zebra's Enterprise Home Screen (EHS) or an MDM solution
      */
     private void setupKioskMode() {
         // Keep screen on
@@ -231,6 +253,47 @@ public class MainActivity extends Activity {
             | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
             | View.SYSTEM_UI_FLAG_FULLSCREEN
         );
+        
+        // Enable Lock Task Mode (screen pinning) if configured
+        if (ENABLE_KIOSK_LOCK) {
+            startKioskLockTask();
+        }
+    }
+    
+    /**
+     * Start Lock Task Mode (screen pinning)
+     * This locks the user into this app until stopLockTask() is called
+     */
+    private void startKioskLockTask() {
+        try {
+            ActivityManager activityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+            
+            // Check if we're already in lock task mode
+            if (activityManager.getLockTaskModeState() == ActivityManager.LOCK_TASK_MODE_NONE) {
+                // Start lock task mode (screen pinning)
+                // If app is not Device Owner, this will show a user confirmation dialog
+                startLockTask();
+                Log.i(TAG, "Lock Task Mode (screen pinning) started");
+            } else {
+                Log.i(TAG, "Already in Lock Task Mode");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error starting Lock Task Mode: " + e.getMessage());
+            // This is not fatal - the app will still work, just not locked
+        }
+    }
+    
+    /**
+     * Stop Lock Task Mode (for admin use only)
+     * Can be called via ADB or through a hidden admin interface
+     */
+    private void stopKioskLockTask() {
+        try {
+            stopLockTask();
+            Log.i(TAG, "Lock Task Mode stopped");
+        } catch (Exception e) {
+            Log.e(TAG, "Error stopping Lock Task Mode: " + e.getMessage());
+        }
     }
     
     /**
@@ -468,7 +531,16 @@ public class MainActivity extends Activity {
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         if (hasFocus) {
-            setupKioskMode();
+            // Restore immersive mode (hide system bars)
+            View decorView = getWindow().getDecorView();
+            decorView.setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                | View.SYSTEM_UI_FLAG_FULLSCREEN
+            );
         }
     }
     
