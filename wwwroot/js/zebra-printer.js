@@ -1,5 +1,9 @@
 // Zebra Printer Integration for Self Checkout Kiosk
-// Supports automatic receipt printing using Zebra Browser Print API
+// Supports automatic receipt printing using:
+// 1. Android Native Bridge (custom WebView app with Zebra Link-OS SDK) - RECOMMENDED
+// 2. Zebra Enterprise Browser API (if working)
+// 3. Zebra Browser Print API (desktop)
+// 4. Browser Print Dialog (fallback for testing)
 
 // Configuration constants
 const PRINT_WINDOW_DELAY = 100; // ms to wait before printing in popup window
@@ -11,39 +15,54 @@ class ZebraPrinter {
         this.printerName = null;
         this.browserPrintLoaded = false;
         this.zebraApiLoaded = false;
+        this.androidBridgeAvailable = false;
     }
 
     /**
      * Initialize printer connection
-     * Checks for Zebra Browser Print API or Enterprise Browser API
+     * Checks for available print APIs in order of preference
      */
     async initialize() {
-        console.log('Initializing Zebra printer...');
+        console.log('Initializing printer...');
         
-        // Check if Zebra Enterprise Browser API is available (for KC50 kiosk)
+        // Method 1 (PREFERRED): Android native bridge (custom WebView app with Zebra SDK)
+        // This requires a custom Android app wrapping the web app
+        if (typeof Android !== 'undefined' && typeof Android.printReceipt === 'function') {
+            console.log('Android native bridge detected - using direct USB printing');
+            this.androidBridgeAvailable = true;
+            return true;
+        }
+
+        // Method 2: Zebra Enterprise Browser API (for KC50 kiosk)
         if (typeof EB !== 'undefined' && EB.Printer) {
             console.log('Zebra Enterprise Browser API detected');
             this.zebraApiLoaded = true;
             return true;
         }
 
-        // Check if Browser Print is available
+        // Method 3: Zebra Browser Print API (desktop)
         if (typeof BrowserPrint !== 'undefined') {
             console.log('Zebra Browser Print API detected');
             this.browserPrintLoaded = true;
             
             try {
-                // Get default printer
                 await this.getDefaultPrinter();
                 return true;
             } catch (error) {
                 console.error('Failed to get default printer:', error);
-                return false;
             }
         }
 
-        console.warn('No Zebra printer API detected. Will fall back to browser print.');
+        console.warn('No direct printer API detected. For KC50 kiosk, deploy the custom Android WebView app.');
+        console.warn('See docs/AUTOMATIC_RECEIPT_PRINTING_SOLUTION.md for implementation guide.');
         return false;
+    }
+
+    /**
+     * Check if running on Android
+     */
+    isAndroid() {
+        return /Android/i.test(navigator.userAgent);
     }
 
     /**
@@ -130,6 +149,7 @@ class ZebraPrinter {
 
     /**
      * Print receipt automatically
+     * Tries available methods in order of preference
      * @param {string} zplCommands - ZPL commands to print
      * @param {string} htmlReceipt - HTML fallback for browser print
      */
@@ -137,21 +157,47 @@ class ZebraPrinter {
         console.log('Attempting to print receipt...');
 
         try {
-            // Try Zebra-specific methods first
+            // Method 1 (PREFERRED): Android native bridge with Zebra SDK
+            if (this.androidBridgeAvailable) {
+                console.log('Using Android native bridge (Zebra SDK)');
+                try {
+                    Android.printReceipt(zplCommands);
+                    return { success: true, method: 'android-bridge' };
+                } catch (error) {
+                    console.error('Android bridge print failed:', error);
+                }
+            }
+
+            // Method 2: Zebra Enterprise Browser API
             if (this.zebraApiLoaded) {
                 console.log('Using Zebra Enterprise Browser API');
-                await this.printZplEnterpriseBrowser(zplCommands);
-                return { success: true, method: 'zebra-enterprise' };
+                try {
+                    await this.printZplEnterpriseBrowser(zplCommands);
+                    return { success: true, method: 'zebra-enterprise' };
+                } catch (error) {
+                    console.error('Zebra Enterprise Browser print failed:', error);
+                }
             }
 
+            // Method 3: Zebra Browser Print API
             if (this.browserPrintLoaded && this.defaultPrinter) {
                 console.log('Using Zebra Browser Print API');
-                await this.printZplBrowserPrint(zplCommands);
-                return { success: true, method: 'browser-print' };
+                try {
+                    await this.printZplBrowserPrint(zplCommands);
+                    return { success: true, method: 'browser-print' };
+                } catch (error) {
+                    console.error('Browser Print API failed:', error);
+                }
             }
 
-            // Fallback to browser print dialog with HTML
-            console.log('Falling back to browser print dialog');
+            // Method 4: Fallback to browser print dialog with HTML (for testing only)
+            if (this.isAndroid()) {
+                console.warn('No print API available on Android. Deploy the custom WebView app for automatic printing.');
+                console.warn('See docs/AUTOMATIC_RECEIPT_PRINTING_SOLUTION.md');
+                return { success: false, method: 'none', error: 'No Android print bridge available' };
+            }
+
+            console.log('Falling back to browser print dialog (testing mode)');
             this.printHtmlFallback(htmlReceipt);
             return { success: true, method: 'browser-fallback' };
 

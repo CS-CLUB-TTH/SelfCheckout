@@ -69,9 +69,13 @@ public class CartModel : PageModel
             Tax = CartItems.Sum(item => item.VatAmt);
             Total = Subtotal + Tax; // Total = subtotal + tax
 
+            // Get the bill header key for payment processing
+            var billHdrKey = await _databaseService.GetBillHdrKeyByCustomerKey(cusKey.Value);
+            
             // Store cart information in TempData for payment processing and receipt
             CustomerId = cusKey.Value;
             TempData["CustomerId"] = CustomerId; // int is supported
+            TempData["BillHdrKey"] = billHdrKey; // int is supported
             // Decimal is not supported by DefaultTempDataSerializer; store as invariant strings
             TempData["CartTotal"] = Total.ToString(CultureInfo.InvariantCulture);
             TempData["CartSubtotal"] = Subtotal.ToString(CultureInfo.InvariantCulture);
