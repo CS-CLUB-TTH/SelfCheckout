@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- USB device filter for Zebra printers -->
+<!-- USB device filter for receipt printers -->
 <resources>
+    <!-- EPSON USB Printers (TM-T88VII, etc.) - Vendor ID: 0x04B8 -->
+    <usb-device vendor-id="1208" />
+    
     <!-- Zebra USB Printers - Vendor ID: 0x0A5F -->
     <usb-device vendor-id="2655" />
 </resources>
