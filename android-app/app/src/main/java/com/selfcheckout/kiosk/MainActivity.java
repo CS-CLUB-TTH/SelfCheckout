@@ -55,7 +55,7 @@ public class MainActivity extends Activity {
     // Change WEB_APP_URL to your ASP.NET Core web app URL
     // Format: https://IP_ADDRESS:PORT/ or http://IP_ADDRESS:PORT/
     // ============================================================
-    private static final String WEB_APP_URL = "https://kyrie-deflected-laila.ngrok-free.dev";
+    private static final String WEB_APP_URL = "https://pdtschoolcanteen.cubes-intl.com";
     
     // Enable/disable kiosk lock (screen pinning)
     // Set to true to prevent users from exiting the app
