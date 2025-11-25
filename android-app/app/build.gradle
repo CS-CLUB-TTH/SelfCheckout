@@ -1,0 +1,65 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.selfcheckout.kiosk'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.selfcheckout.kiosk"
+        minSdk 26
+        targetSdk 34
+        versionCode 1
+        versionName "1.0.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        
+        // ============================================================
+        // CONFIGURATION: Change this URL to your ASP.NET Core web app
+        // ============================================================
+        buildConfigField "String", "WEB_APP_URL", "\"https://192.168.1.100:5001/\""
+        // ============================================================
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    
+    // Enable BuildConfig generation
+    buildFeatures {
+        buildConfig true
+    }
+    
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    
+    // Allow loading from libs folder for Zebra SDK
+    packagingOptions {
+        pickFirst 'META-INF/DEPENDENCIES'
+        pickFirst 'META-INF/LICENSE'
+        pickFirst 'META-INF/LICENSE.txt'
+        pickFirst 'META-INF/NOTICE'
+        pickFirst 'META-INF/NOTICE.txt'
+    }
+}
+
+dependencies {
+    // AndroidX dependencies
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.11.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    
+    // Zebra Link-OS SDK - place ZSDK_ANDROID_API.jar in app/libs/ folder
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    
+    // Testing
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+}
