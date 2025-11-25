@@ -124,13 +124,14 @@ BEGIN
           );
 
         -- Return success result with bill details
+        -- Column names must match C# PaymentCompletionResult model properties
         SELECT 
-            @bill_hdr_key AS bill_hdr_key,
-            @bill_amt AS bill_amt,
-            @bill_disc_amt AS bill_disc_amt,
-            @total_vat AS total_vat,
-            'SUCCESS' AS status,
-            'Payment completed successfully' AS message;
+            @bill_hdr_key AS BillHdrKey,
+            @bill_amt AS BillAmt,
+            @bill_disc_amt AS BillDiscAmt,
+            @total_vat AS TotalVat,
+            'SUCCESS' AS Status,
+            'Payment completed successfully' AS Message;
 
         COMMIT TRANSACTION;
     END TRY
@@ -138,14 +139,14 @@ BEGIN
         IF @@TRANCOUNT > 0
             ROLLBACK TRANSACTION;
             
-        -- Return error result
+        -- Return error result with matching column names
         SELECT 
-            @bill_hdr_key AS bill_hdr_key,
-            NULL AS bill_amt,
-            NULL AS bill_disc_amt,
-            NULL AS total_vat,
-            'ERROR' AS status,
-            ERROR_MESSAGE() AS message;
+            @bill_hdr_key AS BillHdrKey,
+            NULL AS BillAmt,
+            NULL AS BillDiscAmt,
+            NULL AS TotalVat,
+            'ERROR' AS Status,
+            ERROR_MESSAGE() AS Message;
             
         -- Re-raise the error
         DECLARE @ErrorMessage NVARCHAR(4000), @ErrorSeverity INT, @ErrorState INT;
