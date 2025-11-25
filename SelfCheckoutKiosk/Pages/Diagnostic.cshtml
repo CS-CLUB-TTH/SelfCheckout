@@ -1,0 +1,125 @@
+@page
+@model DiagnosticModel
+@{
+    ViewData["Title"] = "Kiosk Diagnostic";
+    Layout = "_KioskLayout";
+}
+
+<div style="padding: 40px; font-family: Arial, sans-serif; background: #f5f5f5; min-height: 100vh;">
+    <h1 style="color: #163f36; margin-bottom: 30px;">Kiosk Diagnostic Page</h1>
+    
+    <div style="background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+        <h2 style="color: #4b9762;">Browser Information</h2>
+        <p id="userAgent" style="word-break: break-all;"></p>
+        <p id="screenSize"></p>
+        <p id="viewportSize"></p>
+        <p id="devicePixelRatio"></p>
+    </div>
+    
+    <div style="background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+        <h2 style="color: #4b9762;">JavaScript Test</h2>
+        <p id="jsTest" style="color: green;">JavaScript is working!</p>
+        <p id="es6Test"></p>
+    </div>
+    
+    <div style="background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+        <h2 style="color: #4b9762;">CSS Test</h2>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <div style="width: 50px; height: 50px; background: var(--fm-yellow, #f4d84b);"></div>
+            <div style="width: 50px; height: 50px; background: var(--fm-green, #4b9762);"></div>
+            <div style="width: 50px; height: 50px; background: var(--fm-dark-green, #163f36);"></div>
+        </div>
+        <p id="cssVarTest"></p>
+    </div>
+    
+    <div style="background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+        <h2 style="color: #4b9762;">External Resources</h2>
+        <p id="fontTest">Testing Google Fonts...</p>
+        <p id="bootstrapTest">Testing Bootstrap...</p>
+        <p id="jqueryTest">Testing jQuery...</p>
+    </div>
+    
+    <div style="background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+        <h2 style="color: #4b9762;">Navigation Test</h2>
+        <a href="/" style="display: inline-block; padding: 15px 30px; background: #4b9762; color: white; text-decoration: none; border-radius: 8px; margin: 5px;">Home</a>
+        <a href="/Cart" style="display: inline-block; padding: 15px 30px; background: #4b9762; color: white; text-decoration: none; border-radius: 8px; margin: 5px;">Cart</a>
+        <a href="/Payment" style="display: inline-block; padding: 15px 30px; background: #4b9762; color: white; text-decoration: none; border-radius: 8px; margin: 5px;">Payment</a>
+    </div>
+    
+    <div id="errorLog" style="background: #ffebee; padding: 20px; border-radius: 10px; margin-bottom: 20px; display: none;">
+        <h2 style="color: #c62828;">Error Log</h2>
+        <pre id="errorContent" style="white-space: pre-wrap; word-break: break-all;"></pre>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Collect errors
+        var errors = [];
+        window.onerror = function(msg, url, line) {
+            errors.push('Error: ' + msg + ' at ' + url + ':' + line);
+            showErrors();
+            return false;
+        };
+        
+        function showErrors() {
+            if (errors.length > 0) {
+                document.getElementById('errorLog').style.display = 'block';
+                document.getElementById('errorContent').textContent = errors.join('\n');
+            }
+        }
+        
+        // Browser info
+        document.getElementById('userAgent').textContent = 'User Agent: ' + navigator.userAgent;
+        document.getElementById('screenSize').textContent = 'Screen: ' + screen.width + 'x' + screen.height;
+        document.getElementById('viewportSize').textContent = 'Viewport: ' + window.innerWidth + 'x' + window.innerHeight;
+        document.getElementById('devicePixelRatio').textContent = 'Pixel Ratio: ' + (window.devicePixelRatio || 1);
+        
+        // ES6 test - using Function constructor which is safer than eval for syntax checking
+        var es6Supported = false;
+        try {
+            // Test arrow function support by creating a function that uses arrow syntax
+            new Function('return (function() { return true; })()');
+            // If we got here, basic ES6 is likely supported - check for arrow functions
+            if (typeof Symbol !== 'undefined' && typeof Promise !== 'undefined') {
+                es6Supported = true;
+            }
+        } catch (e) {
+            es6Supported = false;
+        }
+        document.getElementById('es6Test').textContent = 'ES6 Features: ' + (es6Supported ? 'Likely Supported' : 'May have limited support - app uses ES5 for compatibility');
+        document.getElementById('es6Test').style.color = es6Supported ? 'green' : 'orange';
+        
+        // CSS Variables test
+        var testEl = document.createElement('div');
+        testEl.style.setProperty('--test', 'red');
+        var cssVarSupported = testEl.style.getPropertyValue('--test') === 'red';
+        document.getElementById('cssVarTest').textContent = 'CSS Variables: ' + (cssVarSupported ? 'Supported' : 'NOT SUPPORTED - Fallbacks will be used');
+        document.getElementById('cssVarTest').style.color = cssVarSupported ? 'green' : 'orange';
+        
+        // Font test
+        setTimeout(function() {
+            var fontLoaded = document.fonts && document.fonts.check && document.fonts.check('1em Montserrat');
+            document.getElementById('fontTest').textContent = 'Google Fonts (Montserrat): ' + (fontLoaded ? 'Loaded' : 'Using fallback fonts');
+            document.getElementById('fontTest').style.color = fontLoaded ? 'green' : 'orange';
+        }, 2000);
+        
+        // Bootstrap test
+        if (typeof bootstrap !== 'undefined') {
+            document.getElementById('bootstrapTest').textContent = 'Bootstrap: Loaded';
+            document.getElementById('bootstrapTest').style.color = 'green';
+        } else {
+            document.getElementById('bootstrapTest').textContent = 'Bootstrap: Not loaded (may affect styling)';
+            document.getElementById('bootstrapTest').style.color = 'orange';
+        }
+        
+        // jQuery test
+        if (typeof jQuery !== 'undefined') {
+            document.getElementById('jqueryTest').textContent = 'jQuery: Loaded (v' + jQuery.fn.jquery + ')';
+            document.getElementById('jqueryTest').style.color = 'green';
+        } else {
+            document.getElementById('jqueryTest').textContent = 'jQuery: Not loaded';
+            document.getElementById('jqueryTest').style.color = 'orange';
+        }
+    </script>
+}
