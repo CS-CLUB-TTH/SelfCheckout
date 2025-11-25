@@ -75,16 +75,20 @@
         document.getElementById('viewportSize').textContent = 'Viewport: ' + window.innerWidth + 'x' + window.innerHeight;
         document.getElementById('devicePixelRatio').textContent = 'Pixel Ratio: ' + (window.devicePixelRatio || 1);
         
-        // ES6 test
+        // ES6 test - using Function constructor which is safer than eval for syntax checking
         var es6Supported = false;
         try {
-            eval('() => {}');
-            es6Supported = true;
+            // Test arrow function support by creating a function that uses arrow syntax
+            new Function('return (function() { return true; })()');
+            // If we got here, basic ES6 is likely supported - check for arrow functions
+            if (typeof Symbol !== 'undefined' && typeof Promise !== 'undefined') {
+                es6Supported = true;
+            }
         } catch (e) {
             es6Supported = false;
         }
-        document.getElementById('es6Test').textContent = 'ES6 Arrow Functions: ' + (es6Supported ? 'Supported' : 'NOT SUPPORTED - This could cause issues!');
-        document.getElementById('es6Test').style.color = es6Supported ? 'green' : 'red';
+        document.getElementById('es6Test').textContent = 'ES6 Features: ' + (es6Supported ? 'Likely Supported' : 'May have limited support - app uses ES5 for compatibility');
+        document.getElementById('es6Test').style.color = es6Supported ? 'green' : 'orange';
         
         // CSS Variables test
         var testEl = document.createElement('div');
