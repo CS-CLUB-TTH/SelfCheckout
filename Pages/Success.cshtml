@@ -55,16 +55,16 @@
     <script src="~/js/zebra-printer.js"></script>
     
     <script>
-        // Configuration constants
-        const PRINT_STATUS_HIDE_DELAY = 3000; // ms to hide print status message
-        const FEEDBACK_REDIRECT_DELAY = 5000; // ms before redirecting to feedback
+        // Configuration constants (ES5 compatible)
+        var PRINT_STATUS_HIDE_DELAY = 3000; // ms to hide print status message
+        var FEEDBACK_REDIRECT_DELAY = 5000; // ms before redirecting to feedback
         
         // Receipt ZPL data from server
-        const receiptZpl = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ReceiptZpl ?? ""));
+        var receiptZpl = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ReceiptZpl ?? ""));
         
         // Auto-print receipt on page load via Android Native Bridge
-        document.addEventListener('DOMContentLoaded', async function() {
-            const printStatus = document.getElementById('printStatus');
+        document.addEventListener('DOMContentLoaded', function() {
+            var printStatus = document.getElementById('printStatus');
             
             try {
                 console.log('Starting automatic receipt printing via Android Native Bridge...');
@@ -84,18 +84,22 @@
                     return;
                 }
                 
-                // Print via Android Native Bridge
-                const result = await autoPrintReceipt(receiptZpl);
-                
-                if (result.success) {
-                    printStatus.innerHTML = '<i class="bi bi-check-circle"></i> Receipt printed successfully!';
-                    printStatus.style.color = '#28a745';
-                    console.log('Receipt printed successfully via Android Native Bridge');
-                } else {
-                    printStatus.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Print failed: ' + (result.error || 'Unknown error');
+                // Print via Android Native Bridge (using Promise)
+                autoPrintReceipt(receiptZpl).then(function(result) {
+                    if (result.success) {
+                        printStatus.innerHTML = '<i class="bi bi-check-circle"></i> Receipt printed successfully!';
+                        printStatus.style.color = '#28a745';
+                        console.log('Receipt printed successfully via Android Native Bridge');
+                    } else {
+                        printStatus.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Print failed: ' + (result.error || 'Unknown error');
+                        printStatus.style.color = '#dc3545';
+                        console.error('Print failed:', result.error);
+                    }
+                }).catch(function(error) {
+                    console.error('Error during auto-print:', error);
+                    printStatus.innerHTML = '<i class="bi bi-exclamation-circle"></i> Print error: ' + error.message;
                     printStatus.style.color = '#dc3545';
-                    console.error('Print failed:', result.error);
-                }
+                });
             } catch (error) {
                 console.error('Error during auto-print:', error);
                 printStatus.innerHTML = '<i class="bi bi-exclamation-circle"></i> Print error: ' + error.message;
@@ -103,7 +107,7 @@
             }
             
             // Hide print status after delay
-            setTimeout(() => {
+            setTimeout(function() {
                 if (printStatus) {
                     printStatus.style.display = 'none';
                 }
@@ -111,7 +115,7 @@
         });
         
         // Redirect to feedback after delay
-        setTimeout(() => {
+        setTimeout(function() {
             window.location.href = '/Feedback';
         }, FEEDBACK_REDIRECT_DELAY);
     </script>
