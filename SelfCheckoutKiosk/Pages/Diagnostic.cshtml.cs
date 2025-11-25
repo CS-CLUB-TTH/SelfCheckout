@@ -1,0 +1,11 @@
+using Microsoft.AspNetCore.Mvc.RazorPages;
+
+namespace SelfCheckoutKiosk.Pages
+{
+    public class DiagnosticModel : PageModel
+    {
+        public void OnGet()
+        {
+        }
+    }
+}
