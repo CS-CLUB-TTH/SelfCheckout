@@ -207,7 +207,7 @@ public class MainActivity extends Activity {
         Intent intent = new Intent(this, getClass());
         intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
         nfcPendingIntent = PendingIntent.getActivity(
-            this, 0, intent, PendingIntent.FLAG_IMMUTABLE
+            this, 0, intent, PendingIntent.FLAG_MUTABLE
         );
         
         // Setup intent filters for NFC discovery
@@ -266,7 +266,9 @@ public class MainActivity extends Activity {
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
-        
+
+        setIntent(intent);
+
         String action = intent.getAction();
         if (NfcAdapter.ACTION_TAG_DISCOVERED.equals(action) ||
             NfcAdapter.ACTION_TECH_DISCOVERED.equals(action) ||
